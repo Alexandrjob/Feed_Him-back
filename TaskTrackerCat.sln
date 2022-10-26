@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chat.Api", "src\Chat.Api\Chat.Api.csproj", "{256D960C-1DB0-4B95-8A2E-FC979407D5C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskTrackerCat", "src\TaskTrackerCat\TaskTrackerCat.csproj", "{256D960C-1DB0-4B95-8A2E-FC979407D5C4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "src\Infrastructure\Infrastructure.csproj", "{20DB3158-D018-4EDD-BFD2-8F90335A72E5}"
 EndProject

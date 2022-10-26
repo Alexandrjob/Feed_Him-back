@@ -1,6 +1,6 @@
 ﻿{
   "profiles": {
-    "Chat.Api": {
+    "TaskTrackerCat": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

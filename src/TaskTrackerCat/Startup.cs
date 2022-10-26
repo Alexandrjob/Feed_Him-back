@@ -1,12 +1,11 @@
-﻿using Chat.Api.Infrastructure.Factories;
-using Chat.Api.Infrastructure.Factories.Interfaces;
-using Chat.Api.Infrastructure.Mapping;
-using Chat.Api.Repositories.Implementation;
-using Chat.Api.Repositories.Interfaces;
-using MediatR;
-using Npgsql;
+﻿using Npgsql;
+using TaskTrackerCat.Infrastructure;
+using TaskTrackerCat.Infrastructure.Factories;
+using TaskTrackerCat.Infrastructure.Factories.Interfaces;
+using TaskTrackerCat.Repositories.Implementation;
+using TaskTrackerCat.Repositories.Interfaces;
 
-namespace Chat.Api;
+namespace TaskTrackerCat;
 
 public class Startup
 {
@@ -22,14 +21,11 @@ public class Startup
         #region DataBase
 
         services.AddScoped<IDbConnectionFactory<NpgsqlConnection>, NpgsqlConnectionFactory>();
-        services.AddScoped<IItemRepository, ItemRepository>();
+        services.AddScoped<IDietRepository, DietRepository>();
+        services.AddTransient<InitService>();
+        services.AddHostedService<TimedHostedService>();
 
         #endregion
-
-        services.AddAutoMapper(typeof(MappingProfile));
-
-        services.AddControllers();
-        services.AddMediatR(typeof(Startup));
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

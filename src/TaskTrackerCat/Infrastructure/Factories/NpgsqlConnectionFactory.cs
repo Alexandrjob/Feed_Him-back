@@ -1,8 +1,8 @@
 ﻿using System.Data;
-using Chat.Api.Infrastructure.Factories.Interfaces;
 using Npgsql;
+using TaskTrackerCat.Infrastructure.Factories.Interfaces;
 
-namespace Chat.Api.Infrastructure.Factories;
+namespace TaskTrackerCat.Infrastructure.Factories;
 
 public class NpgsqlConnectionFactory : IDbConnectionFactory<NpgsqlConnection>
 {
