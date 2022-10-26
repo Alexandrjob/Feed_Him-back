@@ -1,4 +1,4 @@
-﻿namespace Chat.Api.Infrastructure.Factories.Interfaces;
+﻿namespace TaskTrackerCat.Infrastructure.Factories.Interfaces;
 
 /// <summary>
 /// Фабрика подключений к базе данных.

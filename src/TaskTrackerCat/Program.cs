@@ -1,4 +1,4 @@
-using Chat.Api;
+using TaskTrackerCat;
 using Infrastructure;
 
 var host = CreateHostBuilder(args).Build();
