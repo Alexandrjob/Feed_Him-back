@@ -12,12 +12,12 @@ public class DietViewModel
     /// <summary>
     /// Имя кормящего.
     /// </summary>
-    public string WaiterName { get; set; }
+    public string? WaiterName { get; set; }
 
     /// <summary>
     /// Дата кормления.
     /// </summary>
-    public DateTime Date { get; set; }
+    public DateTime? Date { get; set; }
 
     /// <summary>
     /// Статус выполнения задачи, покормлен/не покормлен.

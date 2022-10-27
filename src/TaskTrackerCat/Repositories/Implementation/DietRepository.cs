@@ -25,7 +25,8 @@ public class DietRepository : IDietRepository
         var sql =
             @"SELECT * FROM diets " +
             "WHERE estimated_date_feeding >= @firstDayMonth " +
-            "AND estimated_date_feeding <= @lastDayMonth ";
+            "AND estimated_date_feeding <= @lastDayMonth " +
+            "ORDER BY estimated_date_feeding";
 
         var connection = await _dbConnectionFactory.CreateConnection();
         var result = await connection.QueryAsync<DietDto>(sql, new {firstDayMonth, lastDayMonth});
