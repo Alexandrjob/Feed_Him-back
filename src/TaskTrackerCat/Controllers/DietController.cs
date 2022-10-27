@@ -25,7 +25,7 @@ public class DietController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Post(DietViewModel model)
+    public async Task<IActionResult> Post([FromBody]DietViewModel model)
     {
         var dietDto = new DietDto()
         {

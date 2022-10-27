@@ -26,10 +26,26 @@ public class Startup
         services.AddHostedService<TimedHostedService>();
 
         #endregion
+
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+                {
+                    builder.WithOrigins("http://localhost:3000")
+                        .AllowAnyMethod()
+                        .AllowAnyOrigin()
+                        .AllowCredentials();
+                });
+        });
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        app.UseCors(builder => builder.
+            AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+        
         app.UseRouting();
         app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
     }
