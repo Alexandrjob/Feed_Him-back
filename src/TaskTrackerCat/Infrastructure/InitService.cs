@@ -1,5 +1,4 @@
-﻿using System.Data;
-using Dapper;
+﻿using Dapper;
 using Npgsql;
 using TaskTrackerCat.Repositories.Models;
 
@@ -13,6 +12,7 @@ public class InitService
     private int numberMealsPerDay = 3;
     private int countServingNumber = 1;
     private DateTime estimatedDateFeeding;
+    NpgsqlConnection connection;
 
     public InitService(IConfiguration configuration)
     {
@@ -23,11 +23,32 @@ public class InitService
 
     public async Task Init()
     {
-        var connection = new NpgsqlConnection(_connectionString);
+        connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync();
 
-        var sql = @"SELECT MAX(estimated_date_feeding) FROM diets";
+        await InitMonth();
+        await InitNextMonth();
+    }
 
+    private async Task InitMonth()
+    {
+        //Приверка на существование данных в таблице.
+        var sql = @"SELECT(SELECT count(*) FROM diets) = 0";
+        var resultIsEmpty = await connection.QueryAsync<bool>(sql);
+        if (!resultIsEmpty.FirstOrDefault())
+        {
+            return;
+        }
+
+        //Указываем что дата приема еды начинается с текущего месяца.
+        estimatedDateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        await AddDiets();
+    }
+
+    private async Task InitNextMonth()
+    {
+        //Проверка на существование будущего месяца.
+        var sql = @"SELECT MAX(estimated_date_feeding) FROM diets";
         var result = await connection.QueryAsync<DateTime>(sql);
 
         var maxMonth = result.FirstOrDefault().Month;
@@ -39,10 +60,12 @@ public class InitService
             return;
         }
 
-        await InitNextMonth(connection);
+        //Указываем что дата приема еды начинается со следующего месяца.
+        estimatedDateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1);
+        await AddDiets();
     }
 
-    private async Task InitNextMonth(IDbConnection connection)
+    private async Task AddDiets()
     {
         var sql =
             "INSERT INTO diets " +
