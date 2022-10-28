@@ -12,7 +12,8 @@ public class InitService
     private int numberMealsPerDay = 3;
     private int countServingNumber = 1;
     private DateTime estimatedDateFeeding;
-    NpgsqlConnection connection;
+    private NpgsqlConnection connection;
+    private int daysInMonth;
 
     public InitService(IConfiguration configuration)
     {
@@ -27,6 +28,7 @@ public class InitService
         await connection.OpenAsync();
 
         await InitMonth();
+        _Diets.Clear();
         await InitNextMonth();
     }
 
@@ -42,6 +44,8 @@ public class InitService
 
         //Указываем что дата приема еды начинается с текущего месяца.
         estimatedDateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        //Записываем количество дней в текущем месяце.
+        daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
         await AddDiets();
     }
 
@@ -62,6 +66,8 @@ public class InitService
 
         //Указываем что дата приема еды начинается со следующего месяца.
         estimatedDateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1);
+        //Записываем количество дней в следующем месяце.
+        daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.AddMonths(1).Month);
         await AddDiets();
     }
 
@@ -71,9 +77,8 @@ public class InitService
             "INSERT INTO diets " +
             "(serving_number, status, estimated_date_feeding) " +
             "VALUES(@ServingNumber, @Status, @EstimatedDateFeeding)";
-        var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
 
-        for (var i = 0; i < daysInMonth * numberMealsPerDay - 3; i++)
+        for (var i = 0; i < daysInMonth * numberMealsPerDay; i++)
         {
             AddDiet();
         }
