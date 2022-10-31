@@ -52,6 +52,7 @@ public class InitService
         estimatedDateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
         //Записываем количество дней в текущем месяце.
         daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+
         await AddDiets(connection);
     }
 
@@ -78,6 +79,7 @@ public class InitService
         estimatedDateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1);
         //Записываем количество дней в следующем месяце.
         daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.AddMonths(1).Month);
+
         await AddDiets(connection);
     }
 
