@@ -1,32 +1,34 @@
-﻿using Dapper;
+﻿using System.Data;
+using Dapper;
+using Microsoft.Data.SqlClient;
 using Npgsql;
+using TaskTrackerCat.Infrastructure.Factories;
+using TaskTrackerCat.Infrastructure.Factories.Interfaces;
 using TaskTrackerCat.Repositories.Models;
 
 namespace TaskTrackerCat.Infrastructure;
 
 public class InitService
 {
-    private readonly string _connectionString;
+    private readonly IServiceProvider _serviceProvider;
+    private IDbConnectionFactory<SqlConnection> _dbConnectionFactory;
+
     private readonly List<DietDto> _Diets;
 
     private int numberMealsPerDay = 3;
     private int countServingNumber = 1;
     private DateTime estimatedDateFeeding;
-    private NpgsqlConnection connection;
     private int daysInMonth;
 
-    public InitService(IConfiguration configuration)
+    public InitService(IConfiguration configuration, IServiceProvider serviceProvider)
     {
+        _serviceProvider = serviceProvider;
         _Diets = new List<DietDto>();
-        _connectionString = configuration.GetSection("ConnectionString").Value;
         estimatedDateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1);
     }
 
     public async Task Init()
     {
-        connection = new NpgsqlConnection(_connectionString);
-        await connection.OpenAsync();
-
         await InitMonth();
         _Diets.Clear();
         await InitNextMonth();
@@ -34,10 +36,14 @@ public class InitService
 
     private async Task InitMonth()
     {
+        using var scope = _serviceProvider.CreateScope();
+        var dbConnectionFactory = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory<SqlConnection>>();
+        var connection = await dbConnectionFactory.CreateConnection();
+
         //Приверка на существование данных в таблице.
-        var sql = @"SELECT(SELECT count(*) FROM diets) = 0";
+        var sql = @"SELECT count(*) FROM diets";
         var resultIsEmpty = await connection.QueryAsync<bool>(sql);
-        if (!resultIsEmpty.FirstOrDefault())
+        if (resultIsEmpty.FirstOrDefault())
         {
             return;
         }
@@ -46,11 +52,16 @@ public class InitService
         estimatedDateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
         //Записываем количество дней в текущем месяце.
         daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-        await AddDiets();
+
+        await AddDiets(connection);
     }
 
     private async Task InitNextMonth()
     {
+        using var scope = _serviceProvider.CreateScope();
+        var dbConnectionFactory = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory<SqlConnection>>();
+        var connection = await dbConnectionFactory.CreateConnection();
+
         //Проверка на существование будущего месяца.
         var sql = @"SELECT MAX(estimated_date_feeding) FROM diets";
         var result = await connection.QueryAsync<DateTime>(sql);
@@ -68,10 +79,11 @@ public class InitService
         estimatedDateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1);
         //Записываем количество дней в следующем месяце.
         daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.AddMonths(1).Month);
-        await AddDiets();
+
+        await AddDiets(connection);
     }
 
-    private async Task AddDiets()
+    private async Task AddDiets(SqlConnection сonnection)
     {
         var sql =
             "INSERT INTO diets " +
@@ -83,7 +95,7 @@ public class InitService
             AddDiet();
         }
 
-        await connection.ExecuteAsync(sql, _Diets);
+        await сonnection.ExecuteAsync(sql, _Diets);
     }
 
     private void AddDiet()

@@ -11,7 +11,7 @@ public class NpgsqlConnectionFactory : IDbConnectionFactory<NpgsqlConnection>
 
     public NpgsqlConnectionFactory(IConfiguration configuration)
     {
-        _connectionString = configuration.GetSection("ConnectionString").Value;
+        _connectionString = configuration.GetSection("ConnectionStringPostrgesql").Value;
     }
 
     public async Task<NpgsqlConnection> CreateConnection()

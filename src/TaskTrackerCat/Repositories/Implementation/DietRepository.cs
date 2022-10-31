@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.Data.SqlClient;
 using Npgsql;
 using TaskTrackerCat.Infrastructure.Factories.Interfaces;
 using TaskTrackerCat.Repositories.Interfaces;
@@ -8,9 +9,9 @@ namespace TaskTrackerCat.Repositories.Implementation;
 
 public class DietRepository : IDietRepository
 {
-    private readonly IDbConnectionFactory<NpgsqlConnection> _dbConnectionFactory;
+    private readonly IDbConnectionFactory<SqlConnection> _dbConnectionFactory;
 
-    public DietRepository(IDbConnectionFactory<NpgsqlConnection> dbConnectionFactory)
+    public DietRepository(IDbConnectionFactory<SqlConnection> dbConnectionFactory)
     {
         _dbConnectionFactory = dbConnectionFactory;
         DefaultTypeMap.MatchNamesWithUnderscores = true;

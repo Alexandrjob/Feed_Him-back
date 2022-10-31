@@ -2,7 +2,7 @@
 
 namespace TaskTrackerCat.Migrator.Magrations;
 
-[Migration(1)]
+//[Migration(1)]
 public class DietsTable : Migration
 {
     public override void Up()

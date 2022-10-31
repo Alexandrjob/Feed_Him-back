@@ -1,4 +1,6 @@
-﻿using Npgsql;
+﻿using System.Data;
+using Microsoft.Data.SqlClient;
+using Npgsql;
 using TaskTrackerCat.Infrastructure;
 using TaskTrackerCat.Infrastructure.Factories;
 using TaskTrackerCat.Infrastructure.Factories.Interfaces;
@@ -20,7 +22,9 @@ public class Startup
     {
         #region DataBase
 
-        services.AddScoped<IDbConnectionFactory<NpgsqlConnection>, NpgsqlConnectionFactory>();
+        //services.AddScoped<IDbConnectionFactory<NpgsqlConnection>, NpgsqlConnectionFactory>();
+        services.AddScoped<IDbConnectionFactory<SqlConnection>, MsConnectionFactory>();
+
         services.AddScoped<IDietRepository, DietRepository>();
         services.AddTransient<InitService>();
         services.AddHostedService<TimedHostedService>();
@@ -30,22 +34,20 @@ public class Startup
         services.AddCors(options =>
         {
             options.AddDefaultPolicy(builder =>
-                {
-                    builder.WithOrigins("http://localhost:3000")
-                        .AllowAnyMethod()
-                        .AllowAnyOrigin()
-                        .AllowCredentials();
-                });
+            {
+                builder.WithOrigins("http://localhost:3000")
+                    .AllowAnyMethod()
+                    .AllowAnyOrigin();
+            });
         });
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        app.UseCors(builder => builder.
-            AllowAnyOrigin()
+        app.UseCors(builder => builder.AllowAnyOrigin()
             .AllowAnyMethod()
             .AllowAnyHeader());
-        
+
         app.UseRouting();
         app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
     }
