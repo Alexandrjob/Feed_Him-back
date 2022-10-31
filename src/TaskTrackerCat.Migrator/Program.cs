@@ -8,13 +8,13 @@ var configuration = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
-var connectionString = configuration.GetSection("ConnectionString").Value;
+var connectionString = configuration.GetSection("ConnectionStringMSSQL").Value;
 
 var services = new ServiceCollection()
     .AddFluentMigratorCore()
     .ConfigureRunner(
         rb => rb
-            .AddPostgres()
+            .AddSqlServer()
             .WithGlobalConnectionString(connectionString)
             .ScanIn(typeof(Program).Assembly)
             .For.Migrations())
