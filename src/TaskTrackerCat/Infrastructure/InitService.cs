@@ -15,7 +15,7 @@ public class InitService
 
     private readonly List<DietDto> _Diets;
 
-    private int numberMealsPerDay = 3;
+    private int numberMealsPerDay = 4;
     private int countServingNumber = 1;
     private DateTime estimatedDateFeeding;
     private int daysInMonth;
@@ -40,7 +40,7 @@ public class InitService
         var dbConnectionFactory = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory<SqlConnection>>();
         var connection = await dbConnectionFactory.CreateConnection();
 
-        //Приверка на существование данных в таблице.
+        //Проверка на существование данных в таблице.
         var sql = @"SELECT count(*) FROM diets";
         var resultIsEmpty = await connection.QueryAsync<bool>(sql);
         if (resultIsEmpty.FirstOrDefault())
