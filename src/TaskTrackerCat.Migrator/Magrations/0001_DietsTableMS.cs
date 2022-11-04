@@ -24,6 +24,8 @@ public class DietsTableMS : Migration
 
     public override void Down()
     {
-        Execute.Sql("DROP TABLE if exists diets;");
+        Execute.Sql("IF EXISTS (" +
+                    "DROP TABLE dbo.diets" +
+                    ");");
     }
 }

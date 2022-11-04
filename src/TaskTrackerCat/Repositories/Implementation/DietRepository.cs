@@ -38,8 +38,7 @@ public class DietRepository : IDietRepository
     public async Task UpdateAsync(DietDto diet)
     {
         var sql = "UPDATE diets " +
-                  "SET serving_number = @ServingNumber, " +
-                  "waiter_name = @WaiterName, " +
+                  "SET waiter_name = @WaiterName, " +
                   "date = @Date, " +
                   "status = @Status " +
                   "WHERE Id = @Id";
