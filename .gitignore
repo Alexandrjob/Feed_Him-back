@@ -1,0 +1,13 @@
+.git
+.idea
+TaskTrackerCat.sln.DotSettings.user
+
+src/Infrastructure/obj
+src/Infrastructure/bin
+
+
+src/TaskTrackerCat/bin
+src/TaskTrackerCat/obj
+
+src/TaskTrackerCat.Migrator/obj
+src/TaskTrackerCat.Migrator/bin
