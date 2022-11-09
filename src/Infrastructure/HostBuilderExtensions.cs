@@ -16,7 +16,13 @@ public static class HostBuilderExtensions
             //services.AddSingleton<IStartupFilter, VersionStartupFilter>();
             services.AddSingleton<IStartupFilter, RequestLoggingStartupFilter>();
             services.AddSingleton<IStartupFilter, SwaggerStartupFilter>();
-            services.AddSwaggerGen();
+            services.AddSwaggerGen(options =>
+            {
+                
+                var xmlFilename = "TaskTrackerCat.xml";
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+            });
+            
         });
 
         return builder;

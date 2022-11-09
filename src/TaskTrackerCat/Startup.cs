@@ -1,9 +1,12 @@
 ﻿using System.Data;
 using Microsoft.Data.SqlClient;
 using Npgsql;
+using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure;
 using TaskTrackerCat.Infrastructure.Factories;
 using TaskTrackerCat.Infrastructure.Factories.Interfaces;
+using TaskTrackerCat.Infrastructure.Handlers;
+using TaskTrackerCat.Infrastructure.Handlers.Interfaces;
 using TaskTrackerCat.Repositories.Implementation;
 using TaskTrackerCat.Repositories.Interfaces;
 
@@ -11,13 +14,6 @@ namespace TaskTrackerCat;
 
 public class Startup
 {
-    private readonly IConfiguration _configuration;
-
-    public Startup(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
-
     public void ConfigureServices(IServiceCollection services)
     {
         #region DataBase
@@ -26,11 +22,15 @@ public class Startup
         services.AddScoped<IDbConnectionFactory<SqlConnection>, MsConnectionFactory>();
 
         services.AddScoped<IDietRepository, DietRepository>();
+        services.AddScoped<IConfigRepository, ConfigRepository>();
+        
         services.AddTransient<InitService>();
         services.AddHostedService<TimedHostedService>();
 
         #endregion
-
+        
+        services.AddScoped<IRequestHandler<ConfigViewModel>, UpdateConfigHadler>();
+        
         services.AddCors(options =>
         {
             options.AddDefaultPolicy(builder =>

@@ -16,27 +16,34 @@ public class DietController : ControllerBase
         _dietRepository = dietRepository;
     }
 
+    /// <summary>
+    /// Get diets current month.
+    /// </summary>
+    /// <returns></returns>
     [HttpGet]
     public async Task<IResult> Get()
     {
         var result = await _dietRepository.GetDietsAsync();
-
         return Results.Json(result);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Post([FromBody]DietViewModel model)
+    /// <summary>
+    /// Update diet.
+    /// </summary>
+    /// <param name="model">Class view model.</param>
+    /// <returns></returns>
+    [HttpPut]
+    public async Task<IActionResult> Update([FromBody]DietViewModel model)
     {
         var dietDto = new DietDto()
         {
             Id = model.Id,
-            ServingNumber = model.ServingNumber,
             WaiterName = model.WaiterName,
             Date = model.Date,
             Status = model.Status
         };
-        await _dietRepository.UpdateAsync(dietDto);
-
+        
+        await _dietRepository.UpdateDietAsync(dietDto);
         return Ok();
     }
 }

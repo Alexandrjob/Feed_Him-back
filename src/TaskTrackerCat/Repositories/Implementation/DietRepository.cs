@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Npgsql;
 using TaskTrackerCat.Infrastructure.Factories.Interfaces;
@@ -27,7 +28,7 @@ public class DietRepository : IDietRepository
             @"SELECT * FROM diets " +
             "WHERE estimated_date_feeding >= @firstDayMonth " +
             "AND estimated_date_feeding <= @lastDayMonth " +
-            "ORDER BY estimated_date_feeding";
+            "ORDER BY estimated_date_feeding, serving_number";
 
         var connection = await _dbConnectionFactory.CreateConnection();
         var result = await connection.QueryAsync<DietDto>(sql, new {firstDayMonth, lastDayMonth});
@@ -35,7 +36,7 @@ public class DietRepository : IDietRepository
         return result.ToList();
     }
 
-    public async Task UpdateAsync(DietDto diet)
+    public async Task UpdateDietAsync(DietDto diet)
     {
         var sql = "UPDATE diets " +
                   "SET waiter_name = @WaiterName, " +

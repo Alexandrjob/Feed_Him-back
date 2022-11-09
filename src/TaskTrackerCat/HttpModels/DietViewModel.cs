@@ -1,14 +1,12 @@
 ﻿namespace TaskTrackerCat.HttpModels;
 
+/// <summary>
+/// Класс приемов еды.
+/// </summary>
 public class DietViewModel
 {
     public int Id { get; set; }
-
-    /// <summary>
-    /// Номер порции. Их в одном дне должно быть не больше 3-х.
-    /// </summary>
-    public int ServingNumber { get; set; }
-
+    
     /// <summary>
     /// Имя кормящего.
     /// </summary>

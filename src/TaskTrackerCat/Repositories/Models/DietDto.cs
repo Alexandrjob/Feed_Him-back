@@ -1,5 +1,8 @@
 ﻿namespace TaskTrackerCat.Repositories.Models;
 
+/// <summary>
+/// Класс приемов еды.
+/// </summary>
 public class DietDto
 {
     public int Id { get; set; }
@@ -12,7 +15,7 @@ public class DietDto
     /// <summary>
     /// Имя кормящего.
     /// </summary>
-    public string WaiterName { get; set; }
+    public string? WaiterName { get; set; }
 
     /// <summary>
     /// Дата кормления.

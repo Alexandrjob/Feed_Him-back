@@ -12,14 +12,24 @@
         <Product>TaskTrackerCat</Product>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <DocumentationFile>bin\Debug\TaskTrackerCat.xml</DocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <DocumentationFile>bin\Release\TaskTrackerCat.xml</DocumentationFile>
+      <NoWarn>$(NoWarn);1591</NoWarn>
+    </PropertyGroup>
+
     <ItemGroup>
-        <PackageReference Include="Dapper" Version="2.0.123"/>
-        <PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.1"/>
-        <PackageReference Include="Npgsql" Version="6.0.7"/>
+        <PackageReference Include="Dapper" Version="2.0.123" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.1" />
+        <PackageReference Include="Npgsql" Version="6.0.7" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Infrastructure\Infrastructure.csproj"/>
+        <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     </ItemGroup>
 
 </Project>
