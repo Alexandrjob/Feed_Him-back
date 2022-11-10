@@ -1,6 +1,8 @@
-﻿namespace TaskTrackerCat.Infrastructure.Handlers.Interfaces;
+﻿using TaskTrackerCat.Controllers;
 
-public interface IRequestHandler<in T>
+namespace TaskTrackerCat.Infrastructure.Handlers.Interfaces;
+
+public interface IRequestHandler<T>
 {
     public Task Handle(T type);
 }

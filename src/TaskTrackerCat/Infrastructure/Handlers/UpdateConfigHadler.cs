@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using TaskTrackerCat.Controllers;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure.Factories.Interfaces;
 using TaskTrackerCat.Infrastructure.Handlers.Interfaces;

@@ -21,9 +21,10 @@ public class DietController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<IResult> Get()
+    public async Task<IResult> Get(GetDietsViewModel model)
     {
-        var result = await _dietRepository.GetDietsAsync();
+        //TODO: Написать валидность данных.
+        var result = await _dietRepository.GetDietsAsync(model.GroupId);
         return Results.Json(result);
     }
 

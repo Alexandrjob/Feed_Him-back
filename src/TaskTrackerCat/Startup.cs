@@ -1,6 +1,5 @@
-﻿using System.Data;
-using Microsoft.Data.SqlClient;
-using Npgsql;
+﻿using Microsoft.Data.SqlClient;
+using TaskTrackerCat.HostedServices;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure;
 using TaskTrackerCat.Infrastructure.Factories;
@@ -18,19 +17,18 @@ public class Startup
     {
         #region DataBase
 
-        //services.AddScoped<IDbConnectionFactory<NpgsqlConnection>, NpgsqlConnectionFactory>();
         services.AddScoped<IDbConnectionFactory<SqlConnection>, MsConnectionFactory>();
 
         services.AddScoped<IDietRepository, DietRepository>();
         services.AddScoped<IConfigRepository, ConfigRepository>();
-        
+
         services.AddTransient<InitService>();
         services.AddHostedService<TimedHostedService>();
 
         #endregion
-        
+
         services.AddScoped<IRequestHandler<ConfigViewModel>, UpdateConfigHadler>();
-        
+
         services.AddCors(options =>
         {
             options.AddDefaultPolicy(builder =>

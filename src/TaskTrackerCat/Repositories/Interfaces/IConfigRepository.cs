@@ -4,7 +4,6 @@ namespace TaskTrackerCat.Repositories.Interfaces;
 
 public interface IConfigRepository
 {
-    
     /// <summary>
     /// Обновление количества приемов еды.
     /// </summary>
@@ -17,4 +16,7 @@ public interface IConfigRepository
     /// </summary>
     /// <returns>Класс dto.</returns>
     Task<ConfigDto> GetConfigAsync(ConfigDto config);
+    
+    
+    Task<ConfigDto> AddConfigAsync();
 }

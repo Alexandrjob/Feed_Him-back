@@ -1,6 +1,6 @@
 ﻿using TaskTrackerCat.Infrastructure;
 
-namespace TaskTrackerCat;
+namespace TaskTrackerCat.HostedServices;
 
 public class TimedHostedService : IHostedService, IDisposable
 {

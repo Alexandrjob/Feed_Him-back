@@ -18,7 +18,8 @@ public class DietsTableMS : Migration
                     waiter_name nvarchar(50),
                     date datetime,
                     status BIT,
-                    estimated_date_feeding datetime
+                    estimated_date_feeding datetime,
+                    group_id INT,
                     );");
     }
 

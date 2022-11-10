@@ -18,7 +18,7 @@ public class DietRepository : IDietRepository
         DefaultTypeMap.MatchNamesWithUnderscores = true;
     }
 
-    public async Task<List<DietDto>> GetDietsAsync()
+    public async Task<List<DietDto>> GetDietsAsync(int groupId)
     {
         var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
 
@@ -27,11 +27,12 @@ public class DietRepository : IDietRepository
         var sql =
             @"SELECT * FROM diets " +
             "WHERE estimated_date_feeding >= @firstDayMonth " +
-            "AND estimated_date_feeding <= @lastDayMonth " +
+            "AND estimated_date_feeding <= @lastDayMonth " + 
+            "AND group_id = @groupId " +
             "ORDER BY estimated_date_feeding, serving_number";
 
         var connection = await _dbConnectionFactory.CreateConnection();
-        var result = await connection.QueryAsync<DietDto>(sql, new {firstDayMonth, lastDayMonth});
+        var result = await connection.QueryAsync<DietDto>(sql, new {firstDayMonth, lastDayMonth, groupId});
 
         return result.ToList();
     }
