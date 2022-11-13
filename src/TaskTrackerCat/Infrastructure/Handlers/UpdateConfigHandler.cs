@@ -8,7 +8,7 @@ using TaskTrackerCat.Repositories.Models;
 
 namespace TaskTrackerCat.Infrastructure.Handlers;
 
-public class UpdateConfigHadler : IRequestHandler<ConfigViewModel>
+public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
 {
     #region Fields
 
@@ -24,7 +24,7 @@ public class UpdateConfigHadler : IRequestHandler<ConfigViewModel>
 
     #endregion
 
-    public UpdateConfigHadler(IDbConnectionFactory<SqlConnection> dbConnectionFactory,
+    public UpdateConfigHandler(IDbConnectionFactory<SqlConnection> dbConnectionFactory,
         IDietRepository dietRepository,
         IConfigRepository configRepository)
     {

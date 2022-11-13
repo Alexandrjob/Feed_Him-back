@@ -29,7 +29,7 @@ public class Startup
 
         #endregion
 
-        services.AddScoped<IRequestHandler<ConfigViewModel>, UpdateConfigHadler>();
+        services.AddScoped<IRequestHandler<ConfigViewModel>, UpdateConfigHandler>();
 
         services.AddCors(options =>
         {
