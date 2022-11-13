@@ -23,14 +23,14 @@ public class Startup
 
         services.AddScoped<IDietRepository, DietRepository>();
         services.AddScoped<IConfigRepository, ConfigRepository>();
-        
+
         services.AddTransient<InitService>();
         services.AddHostedService<TimedHostedService>();
 
         #endregion
-        
-        services.AddScoped<IRequestHandler<ConfigViewModel>, UpdateConfigHadler>();
-        
+
+        services.AddScoped<IRequestHandler<ConfigViewModel>, UpdateConfigHandler>();
+
         services.AddCors(options =>
         {
             options.AddDefaultPolicy(builder =>
