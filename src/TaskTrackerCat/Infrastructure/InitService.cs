@@ -35,10 +35,7 @@ public class InitService
         using var scope = _serviceProvider.CreateScope();
         var dbConnectionFactory = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory<SqlConnection>>();
         _connection = await dbConnectionFactory.CreateConnection();
-        
-        var sql = "DELETE FROM diets";
-        await _connection.ExecuteAsync(sql);
-        
+
         await InitConfig();
         await InitMonth();
         _diets.Clear();
