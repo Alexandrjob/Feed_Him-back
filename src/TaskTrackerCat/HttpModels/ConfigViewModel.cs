@@ -11,4 +11,14 @@ public class ConfigViewModel
     /// Количество приемов еды.
     /// </summary>
     public int NumberMealsPerDay { get; set; }
+
+    /// <summary>
+    /// Начало кормления.
+    /// </summary>
+    public DateTime StartFeeding { get; set; }
+    
+    /// <summary>
+    /// Конец кормления.
+    /// </summary>
+    public DateTime EndFeeding { get; set; }
 }

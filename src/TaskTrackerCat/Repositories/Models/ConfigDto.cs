@@ -1,7 +1,7 @@
 ﻿namespace TaskTrackerCat.Repositories.Models;
 
 /// <summary>
-/// Класс конфигурации, отвечающий за количество приемов еды.
+/// Класс конфигурации, отвечающий за приемы еды.
 /// </summary>
 public class ConfigDto
 {
@@ -11,4 +11,14 @@ public class ConfigDto
     /// Количество приемов еды.
     /// </summary>
     public int NumberMealsPerDay { get; set; }
+    
+    /// <summary>
+    /// Начало кормления.
+    /// </summary>
+    public TimeSpan StartFeeding { get; set; }
+    
+    /// <summary>
+    /// Конец кормления.
+    /// </summary>
+    public TimeSpan EndFeeding { get; set; }
 }

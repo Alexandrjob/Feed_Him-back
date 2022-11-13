@@ -6,7 +6,7 @@ using TaskTrackerCat.Repositories.Models;
 
 namespace TaskTrackerCat.Repositories.Implementation;
 
-public class ConfigRepository:IConfigRepository
+public class ConfigRepository : IConfigRepository
 {
     private readonly IDbConnectionFactory<SqlConnection> _dbConnectionFactory;
 
@@ -24,14 +24,16 @@ public class ConfigRepository:IConfigRepository
 
         var connection = await _dbConnectionFactory.CreateConnection();
         var result = await connection.QueryAsync<ConfigDto>(sql, config);
-        
+
         return result.FirstOrDefault();
     }
 
     public async Task UpdateConfigAsync(ConfigDto config)
     {
         var sql = "UPDATE config " +
-                  "SET number_meals_per_day = @NumberMealsPerDay " +
+                  "SET number_meals_per_day = @NumberMealsPerDay, " +
+                  "start_Feeding = @StartFeeding, " +
+                  "end_feeding = @EndFeeding " +
                   "WHERE Id = @Id";
 
         var connection = await _dbConnectionFactory.CreateConnection();
