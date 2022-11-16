@@ -15,6 +15,8 @@ public class ConfigTableMs : Migration
                 CREATE TABLE config(
                     id INT PRIMARY KEY IDENTITY,
                     number_meals_per_day INT,
+                    start_feeding time,
+                    end_feeding time
                     );");
     }
 
