@@ -1,6 +1,6 @@
-﻿using TaskTrackerCat.Infrastructure;
+﻿using TaskTrackerCat.Infrastructure.InitServices;
 
-namespace TaskTrackerCat.HostedServices;
+namespace TaskTrackerCat.Infrastructure.HostedServices;
 
 public class TimedHostedService : IHostedService, IDisposable
 {
@@ -32,6 +32,7 @@ public class TimedHostedService : IHostedService, IDisposable
         catch (Exception e)
         {
             Console.WriteLine(e);
+            throw;
         }
     }
 

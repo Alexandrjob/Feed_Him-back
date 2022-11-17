@@ -14,9 +14,17 @@ public interface IConfigRepository
     /// <summary>
     /// Получение конфигурации.
     /// </summary>
-    /// <returns>Класс dto.</returns>
+    /// <param name="config">Класс конфигурации.</param>
+    /// <returns>Класс конфигурации.</returns>
     Task<ConfigDto> GetConfigAsync(ConfigDto config);
-    
-    
-    Task<ConfigDto> AddConfigAsync();
+
+    /// <summary>
+    /// Получение конфигурации из группы.
+    /// </summary>
+    /// <param name="group">Класс конфигурации.</param>
+    /// <returns></returns>
+    Task<ConfigDto> GetConfigFromGroupAsync(GroupDto group);
+
+    Task<ConfigDto> AddConfigAsync(ConfigDto config);
+    Task DeleteConfigAsync(ConfigDto config);
 }

@@ -19,7 +19,7 @@ public class ConfigRepository : IConfigRepository
     public async Task<ConfigDto> GetConfigAsync(ConfigDto config)
     {
         var sql =
-            @"SELECT * FROM config " +
+            @"SELECT * FROM configs " +
             "WHERE id = @Id";
 
         var connection = await _dbConnectionFactory.CreateConnection();
@@ -28,14 +28,43 @@ public class ConfigRepository : IConfigRepository
         return result.FirstOrDefault();
     }
 
-    public Task<ConfigDto> AddConfigAsync()
+    public async Task<ConfigDto> GetConfigFromGroupAsync(GroupDto group)
     {
-        throw new NotImplementedException();
+        var sql =
+            @"SELECT * FROM configs " +
+            "WHERE id = @ConfigId";
+
+        var connection = await _dbConnectionFactory.CreateConnection();
+        var result = await connection.QueryAsync<ConfigDto>(sql, group);
+
+        return result.FirstOrDefault();
+    }
+
+    public async Task<ConfigDto> AddConfigAsync(ConfigDto config)
+    {
+        var sql =
+            "INSERT INTO configs " +
+            "OUTPUT INSERTED.* " +
+            "VALUES(@NumberMealsPerDay, @StartFeeding, @EndFeeding)";
+        var connection = await _dbConnectionFactory.CreateConnection();
+        var result = await connection.QueryAsync<ConfigDto>(sql, config);
+
+        return result.FirstOrDefault();
+    }
+
+    public async Task DeleteConfigAsync(ConfigDto config)
+    {
+        var sql =
+            @"DELETE groups " +
+            "WHERE id = @Id";
+
+        var connection = await _dbConnectionFactory.CreateConnection();
+        var result = await connection.ExecuteAsync(sql, config);
     }
 
     public async Task UpdateConfigAsync(ConfigDto config)
     {
-        var sql = "UPDATE config " +
+        var sql = "UPDATE configs " +
                   "SET number_meals_per_day = @NumberMealsPerDay, " +
                   "start_Feeding = @StartFeeding, " +
                   "end_feeding = @EndFeeding " +

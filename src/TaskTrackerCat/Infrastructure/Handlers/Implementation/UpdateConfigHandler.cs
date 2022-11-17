@@ -1,20 +1,21 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
-using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure.Factories.Interfaces;
+using TaskTrackerCat.Infrastructure.Handlers.Commands;
 using TaskTrackerCat.Infrastructure.Handlers.Interfaces;
 using TaskTrackerCat.Repositories.Interfaces;
 using TaskTrackerCat.Repositories.Models;
 
-namespace TaskTrackerCat.Infrastructure.Handlers;
+namespace TaskTrackerCat.Infrastructure.Handlers.Implementation;
 
-public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
+public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
 {
     #region Fields
 
     private readonly IDbConnectionFactory<SqlConnection> _dbConnectionFactory;
-    private readonly IDietRepository _dietRepository;
     private readonly IConfigRepository _configRepository;
+    private ConfigDto _config;
+    private GroupDto _group;
 
     private int NUMBER_MEALS_PER_DAY;
     private TimeSpan INTERVAL;
@@ -25,49 +26,50 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
     #endregion
 
     public UpdateConfigHandler(IDbConnectionFactory<SqlConnection> dbConnectionFactory,
-        IDietRepository dietRepository,
         IConfigRepository configRepository)
     {
         _dbConnectionFactory = dbConnectionFactory;
-        _dietRepository = dietRepository;
         _configRepository = configRepository;
     }
 
     /// <summary>
     /// Обновляет количество приемов еды в день.
     /// </summary>
-    /// <param name="model"></param>
-    public async Task Handle(ConfigViewModel model)
+    /// <param name="request"></param>
+    public async Task Handle(UpdateConfigCommand request)
     {
-        var newConfig = new ConfigDto()
+        _config = new ConfigDto()
         {
-            Id = model.Id,
-            NumberMealsPerDay = model.NumberMealsPerDay,
-            StartFeeding = new TimeSpan(model.StartFeeding.Hour, model.StartFeeding.Minute, model.StartFeeding.Second),
-            EndFeeding = new TimeSpan(model.EndFeeding.Hour, model.EndFeeding.Minute, model.EndFeeding.Second)
+            Id = request.Model.Id,
+            NumberMealsPerDay = request.Model.NumberMealsPerDay,
+            StartFeeding = new TimeSpan(request.Model.StartFeeding.Hour, request.Model.StartFeeding.Minute,
+                request.Model.StartFeeding.Second),
+            EndFeeding = new TimeSpan(request.Model.EndFeeding.Hour, request.Model.EndFeeding.Minute,
+                request.Model.EndFeeding.Second)
         };
+        _group = request.Group;
 
         //Получение конфига перед обновлением.  
-        ConfigDto pastConfig = await _configRepository.GetConfigAsync(newConfig);
+        ConfigDto pastConfig = await _configRepository.GetConfigAsync(_config);
 
-        if (pastConfig.NumberMealsPerDay == newConfig.NumberMealsPerDay &&
-            pastConfig.StartFeeding == newConfig.StartFeeding &&
-            pastConfig.EndFeeding == newConfig.EndFeeding)
+        if (pastConfig.NumberMealsPerDay == _config.NumberMealsPerDay &&
+            pastConfig.StartFeeding == _config.StartFeeding &&
+            pastConfig.EndFeeding == _config.EndFeeding)
         {
             return;
         }
 
-        await _configRepository.UpdateConfigAsync(newConfig);
-        NUMBER_MEALS_PER_DAY = newConfig.NumberMealsPerDay;
+        await _configRepository.UpdateConfigAsync(pastConfig);
+        NUMBER_MEALS_PER_DAY = _config.NumberMealsPerDay;
 
         try
         {
-            if (pastConfig.NumberMealsPerDay != newConfig.NumberMealsPerDay)
+            if (pastConfig.NumberMealsPerDay != _config.NumberMealsPerDay)
             {
-                await UpdateDiets(newConfig, pastConfig);
+                await UpdateDiets(pastConfig);
             }
 
-            await UpdateDateFeeding(newConfig);
+            await UpdateDateFeeding();
         }
         catch (Exception e)
         {
@@ -77,37 +79,38 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         }
     }
 
-    private async Task UpdateDiets(ConfigDto newConfig, ConfigDto pastConfig)
+    private async Task UpdateDiets(ConfigDto pastConfig)
     {
-        if (newConfig.NumberMealsPerDay < pastConfig.NumberMealsPerDay)
+        if (_config.NumberMealsPerDay < pastConfig.NumberMealsPerDay)
         {
             await DeleteDiets();
             return;
         }
 
-        await AddDiets(newConfig, pastConfig.NumberMealsPerDay);
+        await AddDiets(pastConfig.NumberMealsPerDay);
     }
 
     /// <summary>
     /// Удаляет приемы еды, которые больше нового значения приемов еды в день.
     /// </summary>
+    /// <param name="updateConfigCommand"></param>
     private async Task DeleteDiets()
     {
         //Удаляем все приемы пищи с текущего месяца.
         var sqlDiets = @"DELETE diets " +
-                       "WHERE serving_number > @NUMBER_MEALS_PER_DAY";
+                       "WHERE serving_number > @NUMBER_MEALS_PER_DAY " +
+                       "AND group_id = @Id";
 
         var connection = await _dbConnectionFactory.CreateConnection();
-        await connection.ExecuteAsync(sqlDiets, new {NUMBER_MEALS_PER_DAY});
+        await connection.ExecuteAsync(sqlDiets, new {NUMBER_MEALS_PER_DAY, _group});
     }
 
     /// <summary>
     /// Добавляет новые приемы пищи в текущий и будущий месяц.
     /// Стоит отметить что будущий месяц всего один - следущий от текущего, поэтому запрос на получение максимального месяца не пишется.
     /// </summary>
-    /// <param name="config">Конфигурация приемов еды.</param>
     /// <param name="pastNumberMealsPerDay">Количество примемов еды в день до изменения.</param>
-    private async Task AddDiets(ConfigDto config, int pastNumberMealsPerDay)
+    private async Task AddDiets(int pastNumberMealsPerDay)
     {
         //Редактирование даты приема еды начинается с текущего месяца.
         //Устанавливаем максимальное значение, так как при изменении даты кормления идет сортировка по дате.
@@ -116,9 +119,9 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
             DateTime.Now.Year,
             DateTime.Now.Month,
             1,
-            config.EndFeeding.Hours,
-            config.EndFeeding.Minutes,
-            config.EndFeeding.Milliseconds);
+            _config.EndFeeding.Hours,
+            _config.EndFeeding.Minutes,
+            _config.EndFeeding.Milliseconds);
         //Число порции начинается с последней прошлой.
         countServingNumber = pastNumberMealsPerDay;
         var numberDiets = GetTotalNumberDiets(pastNumberMealsPerDay);
@@ -131,8 +134,8 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
 
         var sql =
             "INSERT INTO diets " +
-            "(serving_number, status, estimated_date_feeding) " +
-            "VALUES(@ServingNumber, @Status, @EstimatedDateFeeding)";
+            "(serving_number, status, estimated_date_feeding, group_id) " +
+            "VALUES(@ServingNumber, @Status, @EstimatedDateFeeding, @GroupId)";
 
         var connection = await _dbConnectionFactory.CreateConnection();
         await connection.ExecuteAsync(sql, diets);
@@ -163,7 +166,8 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         {
             ServingNumber = countServingNumber,
             Status = false,
-            EstimatedDateFeeding = estimatedDateFeeding
+            EstimatedDateFeeding = estimatedDateFeeding,
+            GroupId = _group.Id
         };
 
         if (countServingNumber == NUMBER_MEALS_PER_DAY)
@@ -175,9 +179,9 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         diets.Add(diet);
     }
 
-    private async Task UpdateDateFeeding(ConfigDto config)
+    private async Task UpdateDateFeeding()
     {
-        SetIntervalFeeding(config);
+        SetIntervalFeeding();
 
         //Редактирование даты приема еды начинается с текущего месяца.
         var dateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
@@ -185,12 +189,13 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         var sqlGet =
             @"SELECT id, serving_number FROM diets " +
             "WHERE estimated_date_feeding >= @dateFeeding " +
+            "AND group_id = @Id " +
             "ORDER BY estimated_date_feeding, serving_number";
 
         var connection = await _dbConnectionFactory.CreateConnection();
-        var diets = await connection.QueryAsync<DietDto>(sqlGet, new {dateFeeding});
+        var diets = await connection.QueryAsync<DietDto>(sqlGet, new {dateFeeding, _group});
 
-        AddDateFeeding(config, diets);
+        AddDateFeeding(diets);
 
         var sqlUp = "UPDATE diets " +
                     "SET estimated_date_feeding = @EstimatedDateFeeding " +
@@ -199,15 +204,15 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         await connection.ExecuteAsync(sqlUp, diets);
     }
 
-    private void AddDateFeeding(ConfigDto newConfig, IEnumerable<DietDto> diets)
+    private void AddDateFeeding(IEnumerable<DietDto> diets)
     {
         estimatedDateFeeding = new DateTime(
             DateTime.Now.Year,
             DateTime.Now.Month,
             1,
-            newConfig.StartFeeding.Hours,
-            newConfig.StartFeeding.Minutes,
-            newConfig.StartFeeding.Milliseconds);
+            _config.StartFeeding.Hours,
+            _config.StartFeeding.Minutes,
+            _config.StartFeeding.Milliseconds);
 
         //Число порции начинается с первой.
         countServingNumber = 1;
@@ -216,10 +221,10 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         {
             if (countServingNumber == NUMBER_MEALS_PER_DAY)
             {
-                SetEndTimeFeeding(newConfig);
+                SetEndTimeFeeding();
                 diet.EstimatedDateFeeding = estimatedDateFeeding;
 
-                SetStartTimeFeeding(newConfig);
+                SetStartTimeFeeding();
                 estimatedDateFeeding = estimatedDateFeeding.AddDays(1); //Кормить каждый день.
                 countServingNumber = 1;
                 continue;
@@ -231,33 +236,33 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         }
     }
 
-    private void SetStartTimeFeeding(ConfigDto newConfig)
+    private void SetStartTimeFeeding()
     {
         //Устанавливаем значения часа и минут в начальные значения.
         estimatedDateFeeding = new DateTime(
             estimatedDateFeeding.Year,
             estimatedDateFeeding.Month,
             estimatedDateFeeding.Day,
-            newConfig.StartFeeding.Hours,
-            newConfig.StartFeeding.Minutes,
+            _config.StartFeeding.Hours,
+            _config.StartFeeding.Minutes,
             estimatedDateFeeding.Millisecond);
     }
 
-    private void SetEndTimeFeeding(ConfigDto newConfig)
+    private void SetEndTimeFeeding()
     {
         estimatedDateFeeding = new DateTime(
             estimatedDateFeeding.Year,
             estimatedDateFeeding.Month,
             estimatedDateFeeding.Day,
-            newConfig.EndFeeding.Hours,
-            newConfig.EndFeeding.Minutes,
+            _config.EndFeeding.Hours,
+            _config.EndFeeding.Minutes,
             estimatedDateFeeding.Millisecond);
     }
 
-    private void SetIntervalFeeding(ConfigDto config)
+    private void SetIntervalFeeding()
     {
-        var numberMealsPerDay = config.NumberMealsPerDay;
-        var timeFeeding = config.EndFeeding - config.StartFeeding;
+        var numberMealsPerDay = _config.NumberMealsPerDay;
+        var timeFeeding = _config.EndFeeding - _config.StartFeeding;
         //Вычитание происходит из-за того, что последний прием записывается от конфига.
         var notRoundedInterval = timeFeeding / (numberMealsPerDay - 1);
 

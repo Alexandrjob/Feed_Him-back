@@ -14,7 +14,9 @@ public class UsersTableMs : Migration
                 WHERE s.name = 'users') 	
                 CREATE TABLE users(
                     id INT PRIMARY KEY IDENTITY,
+                    email nvarchar(50), 
                     name nvarchar(50),
+                    password nvarchar(50),
                     group_id INT
                     );");
     }

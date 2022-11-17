@@ -10,11 +10,14 @@ public interface IDietRepository
     /// <param name="groupId"></param>
     /// <returns>Список приемов еды за текущий месяц.</returns>
     public Task<List<DietDto>> GetDietsAsync(int groupId);
-    
+
     /// <summary>
     /// Обновление статуса приема еды.
     /// </summary>
     /// <param name="diet">Класс dto.</param>
     /// <returns></returns>
     public Task UpdateDietAsync(DietDto diet);
+
+    Task<DietDto> GetDietAsync(DietDto diet);
+    Task DeleteDietsAsync(GroupDto group);
 }

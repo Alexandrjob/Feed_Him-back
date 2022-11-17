@@ -1,7 +1,5 @@
 ﻿using Dapper;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using Npgsql;
 using TaskTrackerCat.Infrastructure.Factories.Interfaces;
 using TaskTrackerCat.Repositories.Interfaces;
 using TaskTrackerCat.Repositories.Models;
@@ -27,7 +25,7 @@ public class DietRepository : IDietRepository
         var sql =
             @"SELECT * FROM diets " +
             "WHERE estimated_date_feeding >= @firstDayMonth " +
-            "AND estimated_date_feeding <= @lastDayMonth " + 
+            "AND estimated_date_feeding <= @lastDayMonth " +
             "AND group_id = @groupId " +
             "ORDER BY estimated_date_feeding, serving_number";
 
@@ -47,5 +45,27 @@ public class DietRepository : IDietRepository
 
         var connection = await _dbConnectionFactory.CreateConnection();
         await connection.ExecuteAsync(sql, diet);
+    }
+
+    public async Task<DietDto> GetDietAsync(DietDto diet)
+    {
+        var sql =
+            @"SELECT group_id FROM diets " +
+            "WHERE id = @Id";
+
+        var connection = await _dbConnectionFactory.CreateConnection();
+        var result = await connection.QueryAsync<DietDto>(sql, diet);
+
+        return result.FirstOrDefault();
+    }
+
+    public async Task DeleteDietsAsync(GroupDto group)
+    {
+        var sql =
+            "DELETE diets " +
+            "WHERE group_id = @Id";
+
+        var connection = await _dbConnectionFactory.CreateConnection();
+        await connection.ExecuteAsync(sql, group);
     }
 }

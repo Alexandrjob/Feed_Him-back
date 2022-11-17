@@ -31,4 +31,6 @@ public class DietDto
     /// Дата предпологаемого кормления.
     /// </summary>
     public DateTime EstimatedDateFeeding { get; set; }
+
+    public int GroupId { get; set; }
 }

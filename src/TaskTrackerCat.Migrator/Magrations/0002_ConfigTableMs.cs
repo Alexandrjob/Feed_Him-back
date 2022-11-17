@@ -11,8 +11,8 @@ public class ConfigTableMs : Migration
             IF NOT EXISTS (
                 SELECT * FROM sys.tables t 
                 JOIN sys.schemas s ON (t.schema_id = s.schema_id) 
-                WHERE s.name = 'config') 	
-                CREATE TABLE config(
+                WHERE s.name = 'configs') 	
+                CREATE TABLE configs(
                     id INT PRIMARY KEY IDENTITY,
                     number_meals_per_day INT,
                     start_feeding time,

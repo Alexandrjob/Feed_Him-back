@@ -1,10 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Repositories.Interfaces;
 using TaskTrackerCat.Repositories.Models;
 
 namespace TaskTrackerCat.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("/api/diets")]
 public class DietController : ControllerBase
@@ -20,11 +24,18 @@ public class DietController : ControllerBase
     /// Get diets current month.
     /// </summary>
     /// <returns></returns>
+    /// /// <response code="200"></response>
     [HttpGet]
-    public async Task<IResult> Get(GetDietsViewModel model)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<DietDto>))]
+    public async Task<IResult> Get()
     {
-        //TODO: Написать валидность данных.
-        var result = await _dietRepository.GetDietsAsync(model.GroupId);
+        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(token);
+
+        var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
+
+        var result = await _dietRepository.GetDietsAsync(Convert.ToInt32(tokenGroupId));
         return Results.Json(result);
     }
 
@@ -33,9 +44,20 @@ public class DietController : ControllerBase
     /// </summary>
     /// <param name="model">Class view model.</param>
     /// <returns></returns>
+    ///  <response code="200">If access is allowed.</response>
+    /// <response code="400">If access is not allowed.</response>
     [HttpPut]
-    public async Task<IActionResult> Update([FromBody]DietViewModel model)
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrorViewModel<DietViewModel>))]
+    public async Task<IActionResult> Update([FromBody] DietViewModel model)
     {
+        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(token);
+
+        var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
+
         var dietDto = new DietDto()
         {
             Id = model.Id,
@@ -43,7 +65,18 @@ public class DietController : ControllerBase
             Date = model.Date,
             Status = model.Status
         };
-        
+
+        var diet = await _dietRepository.GetDietAsync(dietDto);
+        if (diet.GroupId.ToString() != tokenGroupId)
+        {
+            var error = new ErrorViewModel<DietViewModel>()
+            {
+                Detail = "Access error.",
+                ViewModel = model
+            };
+            return BadRequest(error);
+        }
+
         await _dietRepository.UpdateDietAsync(dietDto);
         return Ok();
     }
