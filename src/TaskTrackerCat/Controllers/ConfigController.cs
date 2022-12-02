@@ -30,10 +30,8 @@ public class ConfigController : ControllerBase
     /// <param name="model">Class view model.</param>
     /// <returns></returns>
     /// <response code="200">If access is allowed.</response>
-    /// <response code="400">If access is not allowed.</response>
     [HttpPut]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrorViewModel<ConfigViewModel>))]
     public async Task<IActionResult> Update(ConfigViewModel model)
     {
         var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
@@ -47,15 +45,6 @@ public class ConfigController : ControllerBase
         };
 
         var group = await _groupRepository.GetGroupAsync(user);
-        if (model.Id != group.ConfigId)
-        {
-            var error = new ErrorViewModel<ConfigViewModel>()
-            {
-                Detail = "Access error.",
-                ViewModel = model
-            };
-            return BadRequest(error);
-        }
 
         var request = new UpdateConfigCommand()
         {

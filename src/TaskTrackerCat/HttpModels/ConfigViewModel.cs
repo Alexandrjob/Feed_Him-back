@@ -5,8 +5,6 @@
 /// </summary>
 public class ConfigViewModel
 {
-    public int Id { get; set; }
-    
     /// <summary>
     /// Количество приемов еды.
     /// </summary>
@@ -16,7 +14,7 @@ public class ConfigViewModel
     /// Начало кормления.
     /// </summary>
     public DateTime StartFeeding { get; set; }
-    
+
     /// <summary>
     /// Конец кормления.
     /// </summary>

@@ -40,7 +40,7 @@ public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
     {
         _config = new ConfigDto()
         {
-            Id = request.Model.Id,
+            Id = request.Group.ConfigId,
             NumberMealsPerDay = request.Model.NumberMealsPerDay,
             StartFeeding = new TimeSpan(request.Model.StartFeeding.Hour, request.Model.StartFeeding.Minute,
                 request.Model.StartFeeding.Second),
@@ -50,7 +50,7 @@ public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
         _group = request.Group;
 
         //Получение конфига перед обновлением.  
-        ConfigDto pastConfig = await _configRepository.GetConfigAsync(_config);
+        var pastConfig = await _configRepository.GetConfigAsync(_config);
 
         if (pastConfig.NumberMealsPerDay == _config.NumberMealsPerDay &&
             pastConfig.StartFeeding == _config.StartFeeding &&
@@ -59,7 +59,7 @@ public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
             return;
         }
 
-        await _configRepository.UpdateConfigAsync(pastConfig);
+        await _configRepository.UpdateConfigAsync(_config);
         NUMBER_MEALS_PER_DAY = _config.NumberMealsPerDay;
 
         try
@@ -93,16 +93,21 @@ public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
     /// <summary>
     /// Удаляет приемы еды, которые больше нового значения приемов еды в день.
     /// </summary>
-    /// <param name="updateConfigCommand"></param>
     private async Task DeleteDiets()
     {
+        var firstDayInCurrentMonth = new DateTime(
+            DateTime.UtcNow.Year,
+            DateTime.UtcNow.Month,
+            1);
+
         //Удаляем все приемы пищи с текущего месяца.
         var sqlDiets = @"DELETE diets " +
                        "WHERE serving_number > @NUMBER_MEALS_PER_DAY " +
+                       "AND estimated_date_feeding > @firstDayInCurrentMonth " +
                        "AND group_id = @Id";
 
         var connection = await _dbConnectionFactory.CreateConnection();
-        await connection.ExecuteAsync(sqlDiets, new {NUMBER_MEALS_PER_DAY, _group});
+        await connection.ExecuteAsync(sqlDiets, new {NUMBER_MEALS_PER_DAY, firstDayInCurrentMonth, _group.Id});
     }
 
     /// <summary>
@@ -116,8 +121,8 @@ public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
         //Устанавливаем максимальное значение, так как при изменении даты кормления идет сортировка по дате.
         //Если дату не устанавить в максимальное значение то добавленые примемы будут первыми.
         estimatedDateFeeding = new DateTime(
-            DateTime.Now.Year,
-            DateTime.Now.Month,
+            DateTime.UtcNow.Year,
+            DateTime.UtcNow.Month,
             1,
             _config.EndFeeding.Hours,
             _config.EndFeeding.Minutes,
@@ -148,8 +153,8 @@ public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
     /// <returns>Количесво приемов еды.</returns>
     private int GetTotalNumberDiets(int pastNumberMealsPerDay)
     {
-        var daysInCurrentMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-        var daysInNextMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.AddMonths(1).Month);
+        var daysInCurrentMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
+        var daysInNextMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.AddMonths(1).Month);
 
         return (daysInNextMonth + daysInCurrentMonth) * (NUMBER_MEALS_PER_DAY - pastNumberMealsPerDay);
     }
@@ -184,7 +189,7 @@ public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
         SetIntervalFeeding();
 
         //Редактирование даты приема еды начинается с текущего месяца.
-        var dateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var dateFeeding = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
 
         var sqlGet =
             @"SELECT id, serving_number FROM diets " +
@@ -193,7 +198,7 @@ public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
             "ORDER BY estimated_date_feeding, serving_number";
 
         var connection = await _dbConnectionFactory.CreateConnection();
-        var diets = await connection.QueryAsync<DietDto>(sqlGet, new {dateFeeding, _group});
+        var diets = await connection.QueryAsync<DietDto>(sqlGet, new {dateFeeding, _group.Id});
 
         AddDateFeeding(diets);
 
@@ -207,8 +212,8 @@ public class UpdateConfigHandler : IRequestHandler<UpdateConfigCommand>
     private void AddDateFeeding(IEnumerable<DietDto> diets)
     {
         estimatedDateFeeding = new DateTime(
-            DateTime.Now.Year,
-            DateTime.Now.Month,
+            DateTime.UtcNow.Year,
+            DateTime.UtcNow.Month,
             1,
             _config.StartFeeding.Hours,
             _config.StartFeeding.Minutes,

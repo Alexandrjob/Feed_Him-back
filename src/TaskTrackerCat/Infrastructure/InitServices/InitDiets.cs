@@ -9,7 +9,6 @@ namespace TaskTrackerCat.Infrastructure.InitServices;
 public class InitDiets
 {
     private readonly IDbConnectionFactory<SqlConnection> _dbConnectionFactory;
-    private readonly IGroupRepository _groupRepository;
     private readonly IConfigRepository _configRepository;
 
     private List<DietDto> _diets;
@@ -21,12 +20,10 @@ public class InitDiets
     private int daysInMonth;
     private TimeSpan INTERVAL;
 
-    public InitDiets(IDbConnectionFactory<SqlConnection> dbConnectionFactory, IConfigRepository configRepository,
-        IGroupRepository groupRepository)
+    public InitDiets(IDbConnectionFactory<SqlConnection> dbConnectionFactory, IConfigRepository configRepository)
     {
         _dbConnectionFactory = dbConnectionFactory;
         _configRepository = configRepository;
-        _groupRepository = groupRepository;
     }
 
     public async Task Init(GroupDto group)
@@ -78,14 +75,14 @@ public class InitDiets
 
         //Дата приема еды начинается с текущего месяца.
         estimatedDateFeeding = new DateTime(
-            DateTime.Now.Year,
-            DateTime.Now.Month,
+            DateTime.UtcNow.Year,
+            DateTime.UtcNow.Month,
             1,
             _config.StartFeeding.Hours,
             _config.StartFeeding.Minutes,
             _config.StartFeeding.Milliseconds);
         //Количество дней в текущем месяце.
-        daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+        daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
         countServingNumber = 1;
 
         await AddDiets();
@@ -101,7 +98,7 @@ public class InitDiets
         var result = await connection.QueryAsync<DateTime>(sql, _group);
 
         var maxMonth = result.FirstOrDefault().Month;
-        var nextMonth = DateTime.Now.AddMonths(1).Month;
+        var nextMonth = DateTime.UtcNow.AddMonths(1).Month;
 
         //Если максимальныая дата масяца совпадает с будущим месяцем.
         if (maxMonth == nextMonth)
@@ -111,15 +108,15 @@ public class InitDiets
 
         //Дата приема еды начинается со следующего месяца.
         estimatedDateFeeding = new DateTime(
-                DateTime.Now.Year,
-                DateTime.Now.Month,
+                DateTime.UtcNow.Year,
+                DateTime.UtcNow.Month,
                 1,
                 _config.StartFeeding.Hours,
                 _config.StartFeeding.Minutes,
                 _config.StartFeeding.Milliseconds)
             .AddMonths(1);
         //Дней в следующем месяце.
-        daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.AddMonths(1).Month);
+        daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.AddMonths(1).Month);
         countServingNumber = 1;
 
         await AddDiets();

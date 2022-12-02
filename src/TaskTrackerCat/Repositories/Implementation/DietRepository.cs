@@ -18,10 +18,8 @@ public class DietRepository : IDietRepository
 
     public async Task<List<DietDto>> GetDietsAsync(int groupId)
     {
-        var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-
-        var firstDayMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-        var lastDayMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, daysInMonth);
+        var firstDayMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var lastDayMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1).AddMonths(1);
         var sql =
             @"SELECT * FROM diets " +
             "WHERE estimated_date_feeding >= @firstDayMonth " +
