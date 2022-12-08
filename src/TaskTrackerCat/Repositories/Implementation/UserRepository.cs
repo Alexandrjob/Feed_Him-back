@@ -21,7 +21,7 @@ public class UserRepository : IUserRepository
         var sql =
             "INSERT INTO users " +
             "OUTPUT INSERTED.* " +
-            "VALUES(@Email,@Name, @Password, @GroupId)";
+            "VALUES(@Email, @Name, @Password, @CurrentGroupId, @NativeGroupId)";
 
         var connection = await _dbConnectionFactory.CreateConnection();
         var result = await connection.QueryAsync<UserDto>(sql, user);
@@ -39,6 +39,18 @@ public class UserRepository : IUserRepository
         var result = await connection.QueryAsync<UserDto>(sql, user);
 
         return result.FirstOrDefault();
+    }
+    
+    public async Task<List<UserDto>> GetUsersGroupAsync(GroupDto group)
+    {
+        var sql =
+            @"SELECT name, email FROM users " +
+            "WHERE current_group_id = @Id";
+
+        var connection = await _dbConnectionFactory.CreateConnection();
+        var result = await connection.QueryAsync<UserDto>(sql, group);
+
+        return result.ToList();
     }
 
     public Task UpdateUserAsync(UserDto user)

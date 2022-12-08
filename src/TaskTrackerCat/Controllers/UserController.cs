@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure.Handlers.Interfaces;
+using TaskTrackerCat.Repositories.Interfaces;
+using TaskTrackerCat.Repositories.Models;
 
 namespace TaskTrackerCat.Controllers;
 
@@ -14,14 +18,91 @@ public class UserController : ControllerBase
         _authenticationUserHandler;
 
     private readonly IRequestAuthorizeHandler<AuthorizeUserViewModel, AuthorizeUserViewModel> _authorizeUserHandler;
+    private readonly IUserRepository _userRepository;
+    private readonly IConfigRepository _configRepository;
+    private readonly IGroupRepository _groupRepository;
 
     public UserController(
         IRequestAuthenticationHandler<AuthenticationUserViewModel, AuthenticationUserViewModel>
             authenticationUserHandler,
-        IRequestAuthorizeHandler<AuthorizeUserViewModel, AuthorizeUserViewModel> authorizeUserHandler)
+        IRequestAuthorizeHandler<AuthorizeUserViewModel, AuthorizeUserViewModel> authorizeUserHandler,
+        IUserRepository userRepository, IConfigRepository configRepository, IGroupRepository groupRepository)
     {
         _authenticationUserHandler = authenticationUserHandler;
         _authorizeUserHandler = authorizeUserHandler;
+        _userRepository = userRepository;
+        _configRepository = configRepository;
+        _groupRepository = groupRepository;
+    }
+
+    /// <summary>
+    /// Gets information about the user, diet and users in the group.
+    /// </summary>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetInfo()
+    {
+        //Получить имя и почту
+        //Получить данные конфигурации если это создатель группы
+        //Получить данные группы(Имя учатников, и какой-то идентификатор(почта, id) если это создатель группы)
+        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(token);
+
+        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
+        var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
+
+        var currentUser = new UserDto
+        {
+            Email = tokenUserEmail,
+            NativeGroupId = Convert.ToInt32(tokenGroupId)
+        };
+
+        var responseUser = await _userRepository.GetUserAsync(currentUser);
+        var responseGroup = await _groupRepository.GetGroupAsync(currentUser);
+        var responseUsersGroup = await _userRepository.GetUsersGroupAsync(responseGroup);
+
+        var usersGroup = responseUsersGroup
+            .TakeWhile(userDto => userDto.Email != currentUser.Email)
+            .Select(userDto => new UserViewModel() {Name = userDto.Name, Email = userDto.Email})
+            .ToList();
+
+        if (responseUser.CurrentGroupId != responseUser.NativeGroupId)
+        {
+            var shortResponse = new GetInfoViewModel
+            {
+                User = new UserViewModel
+                {
+                    Name = responseUser.Name,
+                    Email = responseUser.Email
+                },
+                UsersGroup = usersGroup,
+                IsCreator = false
+            };
+
+            return Ok(shortResponse);
+        }
+
+        var responseConfig = await _configRepository.GetConfigFromGroupAsync(responseGroup);
+        var response = new GetInfoViewModel
+        {
+            User = new UserViewModel
+            {
+                Name = responseUser.Name,
+                Email = responseUser.Email
+            },
+            UsersGroup = usersGroup,
+            Config = new ConfigViewModel
+            {
+                NumberMealsPerDay = responseConfig.NumberMealsPerDay,
+                StartFeeding = new DateTime().Add(responseConfig.StartFeeding),
+                EndFeeding = new DateTime().Add(responseConfig.EndFeeding)
+            },
+            IsCreator = true
+        };
+        return Ok(response);
     }
 
     /// <summary>

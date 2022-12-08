@@ -41,8 +41,10 @@ public class ConfigController : ControllerBase
         var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
         var user = new UserDto()
         {
-            GroupId = Convert.ToInt32(tokenGroupId)
+            CurrentGroupId = Convert.ToInt32(tokenGroupId)
         };
+
+        //TODO: сделать проверку, что пользователь имеет право на изменение конфига(является создателем).
 
         var group = await _groupRepository.GetGroupAsync(user);
 

@@ -52,7 +52,8 @@ public class AuthorizeUserHandler : IRequestAuthorizeHandler<AuthorizeUserViewMo
             var config = await _configRepository.AddConfigAsync(newConfig);
             var group = await _groupRepository.AddGroupAsync(config);
 
-            userDto.GroupId = group.Id;
+            userDto.CurrentGroupId = group.Id;
+            userDto.NativeGroupId = group.Id;
             var user = await _userRepository.AddUserAsync(userDto);
             await _initDiets.Init(group);
         }
