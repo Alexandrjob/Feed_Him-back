@@ -35,6 +35,18 @@ public class GroupRepository : IGroupRepository
         return result.FirstOrDefault();
     }
 
+    public async Task<GroupDto> UpdateGroupAsync(UserDto user)
+    {
+        var sql = "UPDATE users " +
+                  "SET current_group_id = @CurrentGroupId " +
+                  "WHERE Id = @Id";
+
+        var connection = await _dbConnectionFactory.CreateConnection();
+        await connection.ExecuteAsync(sql, user);
+
+        return new GroupDto();
+    }
+
     public async Task<List<GroupDto>> GetAllGroupsAsync()
     {
         var sql =
@@ -60,11 +72,12 @@ public class GroupRepository : IGroupRepository
     {
         var sql =
             @"SELECT * FROM groups " +
-            "WHERE id = @GroupId";
+            "WHERE id = @CurrentGroupId";
 
         var connection = await _dbConnectionFactory.CreateConnection();
         var result = await connection.QueryAsync<GroupDto>(sql, user);
 
         return result.FirstOrDefault();
     }
+
 }

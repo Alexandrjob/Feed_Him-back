@@ -1,6 +1,6 @@
 ﻿using FluentMigrator;
 
-namespace TaskTrackerCat.Migrator.Magrations;
+namespace TaskTrackerCat.Migrator.Migrations;
 
 [Migration(2)]
 public class ConfigTableMs : Migration

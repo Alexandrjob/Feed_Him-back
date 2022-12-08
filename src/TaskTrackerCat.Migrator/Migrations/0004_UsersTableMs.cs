@@ -1,6 +1,6 @@
 ﻿using FluentMigrator;
 
-namespace TaskTrackerCat.Migrator.Magrations;
+namespace TaskTrackerCat.Migrator.Migrations;
 
 [Migration(4)]
 public class UsersTableMs : Migration
@@ -17,7 +17,8 @@ public class UsersTableMs : Migration
                     email nvarchar(50), 
                     name nvarchar(50),
                     password nvarchar(50),
-                    group_id INT
+                    native_group_id INT,
+                    current_group_id INT,
                     );");
     }
 
