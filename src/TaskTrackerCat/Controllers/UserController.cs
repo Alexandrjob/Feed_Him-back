@@ -52,40 +52,38 @@ public class UserController : ControllerBase
         var jwtToken = tokenHandler.ReadJwtToken(token);
 
         var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
-        var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
 
         var currentUser = new UserDto
         {
-            Email = tokenUserEmail,
-            CurrentGroupId = Convert.ToInt32(tokenGroupId)
+            Email = tokenUserEmail
         };
 
-        var responseUser = await _userRepository.GetUserAsync(currentUser);
-        var responseGroup = await _groupRepository.GetGroupAsync(currentUser);
-        var responseUsersGroup = await _userRepository.GetUsersGroupAsync(responseGroup);
+        var user = await _userRepository.GetUserAsync(currentUser);
+        var group = await _groupRepository.GetGroupAsync(user);
+        var users = await _userRepository.GetUsersGroupAsync(group);
 
         var usersGroup = new List<UserViewModel>();
-        foreach (var user in responseUsersGroup)
+        foreach (var userDto in users)
         {
-            if (user.Email != currentUser.Email)
+            if (userDto.Email != currentUser.Email)
             {
                 var userViewModel = new UserViewModel()
                 {
-                    Name = user.Name,
-                    Email = user.Email
+                    Name = userDto.Name,
+                    Email = userDto.Email
                 };
                 usersGroup.Add(userViewModel);
             }
         }
 
-        if (responseUser.CurrentGroupId != responseUser.NativeGroupId)
+        if (user.CurrentGroupId != user.NativeGroupId)
         {
             var shortResponse = new GetInfoViewModel
             {
                 User = new UserViewModel
                 {
-                    Name = responseUser.Name,
-                    Email = responseUser.Email
+                    Name = user.Name,
+                    Email = user.Email
                 },
                 UsersGroup = usersGroup,
                 IsCreator = false
@@ -94,13 +92,13 @@ public class UserController : ControllerBase
             return Ok(shortResponse);
         }
 
-        var responseConfig = await _configRepository.GetConfigFromGroupAsync(responseGroup);
+        var responseConfig = await _configRepository.GetConfigFromGroupAsync(group);
         var response = new GetInfoViewModel
         {
             User = new UserViewModel
             {
-                Name = responseUser.Name,
-                Email = responseUser.Email
+                Name = user.Name,
+                Email = user.Email
             },
             UsersGroup = usersGroup,
             Config = new ConfigViewModel
@@ -166,7 +164,6 @@ public class UserController : ControllerBase
 
             return Results.BadRequest(error);
         }
-
 
         return Results.Json(response, statusCode: StatusCodes.Status200OK);
     }
