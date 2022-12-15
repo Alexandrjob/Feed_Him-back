@@ -67,9 +67,9 @@ public class GroupController : ControllerBase
 
         var tokenGroupLink = _jwtTokenHelper.GetTokenGroup(group);
 
-        var host = HttpContext.Request.Host;
-        var url = HttpContext.Request.Path;
-        var link = "https://" + host + url + "/" + tokenGroupLink;
+        // var host = HttpContext.Request.Host;
+        // var url = HttpContext.Request.Path;
+        var link = "http://localhost:3000/panel/group/invitation/" + user.Name + "/" + tokenGroupLink;
 
         return Ok(link);
     }
@@ -106,8 +106,8 @@ public class GroupController : ControllerBase
         responseUser.CurrentGroupId = Convert.ToInt32(tokenGroupId);
         await _groupRepository.UpdateGroupAsync(responseUser);
 
-        HttpContext.Response.Headers.Authorization = _jwtTokenHelper.GetToken(responseUser).AccessToken;
-        return Ok();
+        token = _jwtTokenHelper.GetToken(responseUser).AccessToken;
+        return Ok(token);
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ public class GroupController : ControllerBase
         responseUser.CurrentGroupId = responseUser.NativeGroupId;
         await _groupRepository.UpdateGroupAsync(responseUser);
 
-        HttpContext.Response.Headers.Authorization = _jwtTokenHelper.GetToken(responseUser).AccessToken;
-        return Ok();
+        token = _jwtTokenHelper.GetToken(responseUser).AccessToken;
+        return Ok(token);
     }
 }
