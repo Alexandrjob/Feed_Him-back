@@ -57,17 +57,26 @@ public class UserController : ControllerBase
         var currentUser = new UserDto
         {
             Email = tokenUserEmail,
-            NativeGroupId = Convert.ToInt32(tokenGroupId)
+            CurrentGroupId = Convert.ToInt32(tokenGroupId)
         };
 
         var responseUser = await _userRepository.GetUserAsync(currentUser);
         var responseGroup = await _groupRepository.GetGroupAsync(currentUser);
         var responseUsersGroup = await _userRepository.GetUsersGroupAsync(responseGroup);
 
-        var usersGroup = responseUsersGroup
-            .TakeWhile(userDto => userDto.Email != currentUser.Email)
-            .Select(userDto => new UserViewModel() {Name = userDto.Name, Email = userDto.Email})
-            .ToList();
+        var usersGroup = new List<UserViewModel>();
+        foreach (var user in responseUsersGroup)
+        {
+            if (user.Email != currentUser.Email)
+            {
+                var userViewModel = new UserViewModel()
+                {
+                    Name = user.Name,
+                    Email = user.Email
+                };
+                usersGroup.Add(userViewModel);
+            }
+        }
 
         if (responseUser.CurrentGroupId != responseUser.NativeGroupId)
         {
