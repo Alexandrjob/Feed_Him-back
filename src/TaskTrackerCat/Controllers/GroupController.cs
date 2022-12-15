@@ -44,15 +44,11 @@ public class GroupController : ControllerBase
         var jwtToken = tokenHandler.ReadJwtToken(token);
 
         var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
-        var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
+        //var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
 
         var userDto = new UserDto
         {
             Email = tokenUserEmail
-        };
-        var group = new GroupDto
-        {
-            Id = Convert.ToInt32(tokenGroupId)
         };
 
         var user = await _userRepository.GetUserAsync(userDto);
@@ -65,6 +61,10 @@ public class GroupController : ControllerBase
             return Conflict(error);
         }
 
+        var group = new GroupDto
+        {
+            Id = user.CurrentGroupId
+        };
         var tokenGroupLink = _jwtTokenHelper.GetTokenGroup(group);
 
         // var host = HttpContext.Request.Host;
@@ -106,8 +106,7 @@ public class GroupController : ControllerBase
         responseUser.CurrentGroupId = Convert.ToInt32(tokenGroupId);
         await _groupRepository.UpdateGroupAsync(responseUser);
 
-        token = _jwtTokenHelper.GetToken(responseUser).AccessToken;
-        return Ok(token);
+        return Ok();
     }
 
     /// <summary>
@@ -140,7 +139,56 @@ public class GroupController : ControllerBase
         responseUser.CurrentGroupId = responseUser.NativeGroupId;
         await _groupRepository.UpdateGroupAsync(responseUser);
 
-        token = _jwtTokenHelper.GetToken(responseUser).AccessToken;
-        return Ok(token);
+        return Ok();
+    }
+
+    [HttpPost("/api/groups/remove")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RemoveUser(GroupViewModel model)
+    {
+        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(token);
+
+        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
+
+        var currentUser = new UserDto
+        {
+            Email = tokenUserEmail,
+        };
+
+        var removeUser = new UserDto
+        {
+            Email = model.Email,
+        };
+        currentUser = await _userRepository.GetUserAsync(currentUser);
+        removeUser = await _userRepository.GetUserAsync(removeUser);
+
+        if (currentUser.CurrentGroupId != currentUser.NativeGroupId)
+        {
+            var error = new ErrorViewModel<GroupViewModel>()
+            {
+                Detail = "You are not the creator of the group.",
+                ViewModel = model
+            };
+
+            return BadRequest(error);
+        }
+
+        if (currentUser.CurrentGroupId != removeUser.CurrentGroupId)
+        {
+            var error = new ErrorViewModel<GroupViewModel>()
+            {
+                Detail = "User is not in your group.",
+                ViewModel = model
+            };
+
+            return BadRequest(error);
+        }
+
+        removeUser.CurrentGroupId = removeUser.NativeGroupId;
+        await _groupRepository.UpdateGroupAsync(removeUser);
+        return Ok();
     }
 }

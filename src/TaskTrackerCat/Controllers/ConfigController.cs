@@ -16,12 +16,16 @@ namespace TaskTrackerCat.Controllers;
 public class ConfigController : ControllerBase
 {
     private readonly IRequestHandler<UpdateConfigCommand> _updateConfigHandler;
+
+    private readonly IUserRepository _userRepository;
     private readonly IGroupRepository _groupRepository;
 
-    public ConfigController(IRequestHandler<UpdateConfigCommand> updateConfigHandler, IGroupRepository groupRepository)
+    public ConfigController(IRequestHandler<UpdateConfigCommand> updateConfigHandler, IGroupRepository groupRepository,
+        IUserRepository userRepository)
     {
         _updateConfigHandler = updateConfigHandler;
         _groupRepository = groupRepository;
+        _userRepository = userRepository;
     }
 
     /// <summary>
@@ -38,14 +42,14 @@ public class ConfigController : ControllerBase
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(token);
 
-        var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
+        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
         var user = new UserDto()
         {
-            CurrentGroupId = Convert.ToInt32(tokenGroupId)
+            Email = tokenUserEmail
         };
 
         //TODO: сделать проверку, что пользователь имеет право на изменение конфига(является создателем).
-
+        user = await _userRepository.GetUserAsync(user);
         var group = await _groupRepository.GetGroupAsync(user);
 
         var request = new UpdateConfigCommand()

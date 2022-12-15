@@ -11,7 +11,7 @@ public class JwtTokenHelper
     public TokenViewModel GetToken(UserDto user)
     {
         var claims = new List<Claim>
-            {new Claim(ClaimTypes.Email, user.Email), new Claim(ClaimTypes.GroupSid, user.CurrentGroupId.ToString())};
+            {new Claim(ClaimTypes.Email, user.Email)};
         var jwt = new JwtSecurityToken(
             issuer: AuthOptions.ISSUER,
             audience: AuthOptions.AUDIENCE,
@@ -27,11 +27,11 @@ public class JwtTokenHelper
             AccessToken = encodedJwt
         };
     }
-    
+
     public string GetTokenGroup(GroupDto group)
     {
         var claims = new List<Claim>
-            { new Claim(ClaimTypes.GroupSid, group.Id.ToString())};
+            {new Claim(ClaimTypes.GroupSid, group.Id.ToString())};
         var jwt = new JwtSecurityToken(
             issuer: AuthOptions.ISSUER,
             audience: AuthOptions.AUDIENCE,

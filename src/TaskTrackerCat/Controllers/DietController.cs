@@ -1,8 +1,10 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskTrackerCat.HttpModels;
+using TaskTrackerCat.Infrastructure.Identity;
 using TaskTrackerCat.Repositories.Interfaces;
 using TaskTrackerCat.Repositories.Models;
 
@@ -13,11 +15,14 @@ namespace TaskTrackerCat.Controllers;
 [Route("/api/diets")]
 public class DietController : ControllerBase
 {
+    private readonly IUserRepository _userRepository;
     private readonly IDietRepository _dietRepository;
 
-    public DietController(IDietRepository dietRepository)
+    public DietController(IDietRepository dietRepository,
+        IUserRepository userRepository)
     {
         _dietRepository = dietRepository;
+        _userRepository = userRepository;
     }
 
     /// <summary>
@@ -33,10 +38,16 @@ public class DietController : ControllerBase
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(token);
 
-        var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
+        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
 
-        var result = await _dietRepository.GetDietsAsync(Convert.ToInt32(tokenGroupId));
-        return Results.Json(result);
+        var user = new UserDto
+        {
+            Email = tokenUserEmail,
+        };
+        user = await _userRepository.GetUserAsync(user);
+
+        var result = await _dietRepository.GetDietsAsync(user.CurrentGroupId);
+        return Results.Json(result, statusCode: StatusCodes.Status200OK);
     }
 
     /// <summary>
@@ -56,7 +67,13 @@ public class DietController : ControllerBase
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(token);
 
-        var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
+        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
+
+        var user = new UserDto
+        {
+            Email = tokenUserEmail,
+        };
+        user = await _userRepository.GetUserAsync(user);
 
         var dietDto = new DietDto()
         {
@@ -67,7 +84,7 @@ public class DietController : ControllerBase
         };
 
         var diet = await _dietRepository.GetDietAsync(dietDto);
-        if (diet.GroupId.ToString() != tokenGroupId)
+        if (diet.GroupId != user.CurrentGroupId)
         {
             var error = new ErrorViewModel<DietViewModel>()
             {
