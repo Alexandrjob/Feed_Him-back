@@ -40,7 +40,7 @@ public class UserRepository : IUserRepository
 
         return result.FirstOrDefault();
     }
-    
+
     public async Task<List<UserDto>> GetUsersGroupAsync(GroupDto group)
     {
         var sql =
@@ -53,9 +53,25 @@ public class UserRepository : IUserRepository
         return result.ToList();
     }
 
-    public Task UpdateUserAsync(UserDto user)
+    public async Task UpdateEmailNameAsync(UserDto user)
     {
-        throw new NotImplementedException();
+        var sql = "UPDATE users " +
+                  "SET name = @Name, " +
+                  "email = @Email " +
+                  "WHERE Id = @Id";
+
+        var connection = await _dbConnectionFactory.CreateConnection();
+        await connection.ExecuteAsync(sql, user);
+    }
+
+    public async Task UpdatePasswordAsync(UserDto user)
+    {
+        var sql = "UPDATE users " +
+                  "SET password = @Password " +
+                  "WHERE email = @Email";
+
+        var connection = await _dbConnectionFactory.CreateConnection();
+        await connection.ExecuteAsync(sql, user);
     }
 
     public async Task DeleteUserAsync(UserDto user)

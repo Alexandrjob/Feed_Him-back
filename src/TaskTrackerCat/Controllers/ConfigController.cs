@@ -13,19 +13,18 @@ namespace TaskTrackerCat.Controllers;
 [Authorize]
 [ApiController]
 [Route("/api/configs")]
-public class ConfigController : ControllerBase
+public class ConfigController : ControllerBaseCastom
 {
     private readonly IRequestHandler<UpdateConfigCommand> _updateConfigHandler;
 
-    private readonly IUserRepository _userRepository;
     private readonly IGroupRepository _groupRepository;
 
-    public ConfigController(IRequestHandler<UpdateConfigCommand> updateConfigHandler, IGroupRepository groupRepository,
-        IUserRepository userRepository)
+    public ConfigController(IRequestHandler<UpdateConfigCommand> updateConfigHandler,
+        IGroupRepository groupRepository,
+        IUserRepository userRepository) : base(userRepository)
     {
         _updateConfigHandler = updateConfigHandler;
         _groupRepository = groupRepository;
-        _userRepository = userRepository;
     }
 
     /// <summary>
@@ -38,18 +37,9 @@ public class ConfigController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(ConfigViewModel model)
     {
-        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(token);
-
-        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
-        var user = new UserDto()
-        {
-            Email = tokenUserEmail
-        };
-
+        var user = await GetUserAsync();
         //TODO: сделать проверку, что пользователь имеет право на изменение конфига(является создателем).
-        user = await _userRepository.GetUserAsync(user);
+
         var group = await _groupRepository.GetGroupAsync(user);
 
         var request = new UpdateConfigCommand()
