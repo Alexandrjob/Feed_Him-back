@@ -12,20 +12,18 @@ namespace TaskTrackerCat.Controllers;
 [AllowAnonymous]
 [ApiController]
 [Route("/api/groups")]
-public class GroupController : ControllerBase
+public class GroupController : ControllerBaseCastom
 {
     private readonly JwtTokenHelper _jwtTokenHelper;
 
-    private readonly IUserRepository _userRepository;
     private readonly IGroupRepository _groupRepository;
 
     public GroupController(
         JwtTokenHelper jwtTokenHelper,
-        IUserRepository userRepository,
-        IGroupRepository groupRepository)
+        IGroupRepository groupRepository,
+        IUserRepository userRepository) : base(userRepository)
     {
         _jwtTokenHelper = jwtTokenHelper;
-        _userRepository = userRepository;
         _groupRepository = groupRepository;
     }
 
@@ -39,19 +37,7 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
     public async Task<IActionResult> GetLink()
     {
-        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(token);
-
-        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
-        //var tokenGroupId = jwtToken.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
-
-        var userDto = new UserDto
-        {
-            Email = tokenUserEmail
-        };
-
-        var user = await _userRepository.GetUserAsync(userDto);
+        var user = await GetUserAsync();
         if (user.NativeGroupId != user.CurrentGroupId)
         {
             var error = new ErrorViewModel<AuthorizeUserViewModel>()
@@ -85,26 +71,18 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> Update(string tokenGroup)
     {
-        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
         var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(token);
         var jwtTokenLink = tokenHandler.ReadJwtToken(tokenGroup);
-
-        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
         var tokenGroupId = jwtTokenLink.Claims.First(c => c.Type == ClaimTypes.GroupSid).Value;
 
-        var user = new UserDto
-        {
-            Email = tokenUserEmail,
-        };
-        var responseUser = await _userRepository.GetUserAsync(user);
-        if (responseUser.CurrentGroupId == Convert.ToInt32(tokenGroupId))
+        var user = await GetUserAsync();
+        if (user.CurrentGroupId == Convert.ToInt32(tokenGroupId))
         {
             return Accepted();
         }
 
-        responseUser.CurrentGroupId = Convert.ToInt32(tokenGroupId);
-        await _groupRepository.UpdateGroupAsync(responseUser);
+        user.CurrentGroupId = Convert.ToInt32(tokenGroupId);
+        await _groupRepository.UpdateGroupAsync(user);
 
         return Ok();
     }
@@ -120,49 +98,36 @@ public class GroupController : ControllerBase
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> Restore()
     {
-        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(token);
-
-        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
-
-        var user = new UserDto
-        {
-            Email = tokenUserEmail,
-        };
-        var responseUser = await _userRepository.GetUserAsync(user);
-        if (responseUser.CurrentGroupId == responseUser.NativeGroupId)
+        var user = await GetUserAsync();
+        if (user.CurrentGroupId == user.NativeGroupId)
         {
             return Accepted();
         }
 
-        responseUser.CurrentGroupId = responseUser.NativeGroupId;
-        await _groupRepository.UpdateGroupAsync(responseUser);
+        user.CurrentGroupId = user.NativeGroupId;
+        await _groupRepository.UpdateGroupAsync(user);
 
         return Ok();
     }
 
+    /// <summary>
+    /// Removes a user from a group.
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    /// <response code="200">If the data is valid.</response>
+    /// <response code="400">If the data is not valid.</response>
     [HttpPost("/api/groups/remove")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RemoveUser(GroupViewModel model)
     {
-        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(token);
-
-        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
-
-        var currentUser = new UserDto
-        {
-            Email = tokenUserEmail,
-        };
+        var currentUser = await GetUserAsync();
 
         var removeUser = new UserDto
         {
             Email = model.Email,
         };
-        currentUser = await _userRepository.GetUserAsync(currentUser);
         removeUser = await _userRepository.GetUserAsync(removeUser);
 
         if (currentUser.CurrentGroupId != currentUser.NativeGroupId)

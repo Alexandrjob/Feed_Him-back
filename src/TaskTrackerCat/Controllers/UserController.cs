@@ -1,9 +1,8 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure.Handlers.Interfaces;
+using TaskTrackerCat.Infrastructure.Identity;
 using TaskTrackerCat.Repositories.Interfaces;
 using TaskTrackerCat.Repositories.Models;
 
@@ -12,13 +11,13 @@ namespace TaskTrackerCat.Controllers;
 [AllowAnonymous]
 [ApiController]
 [Route("/api/users")]
-public class UserController : ControllerBase
+public class UserController : ControllerBaseCastom
 {
     private readonly IRequestAuthenticationHandler<AuthenticationUserViewModel, AuthenticationUserViewModel>
         _authenticationUserHandler;
 
     private readonly IRequestAuthorizeHandler<AuthorizeUserViewModel, AuthorizeUserViewModel> _authorizeUserHandler;
-    private readonly IUserRepository _userRepository;
+    private readonly JwtTokenHelper _jwtTokenHelper;
     private readonly IConfigRepository _configRepository;
     private readonly IGroupRepository _groupRepository;
 
@@ -26,13 +25,16 @@ public class UserController : ControllerBase
         IRequestAuthenticationHandler<AuthenticationUserViewModel, AuthenticationUserViewModel>
             authenticationUserHandler,
         IRequestAuthorizeHandler<AuthorizeUserViewModel, AuthorizeUserViewModel> authorizeUserHandler,
-        IUserRepository userRepository, IConfigRepository configRepository, IGroupRepository groupRepository)
+        JwtTokenHelper jwtTokenHelper,
+        IConfigRepository configRepository,
+        IGroupRepository groupRepository,
+        IUserRepository userRepository) : base(userRepository)
     {
         _authenticationUserHandler = authenticationUserHandler;
         _authorizeUserHandler = authorizeUserHandler;
-        _userRepository = userRepository;
         _configRepository = configRepository;
         _groupRepository = groupRepository;
+        _jwtTokenHelper = jwtTokenHelper;
     }
 
     /// <summary>
@@ -40,32 +42,19 @@ public class UserController : ControllerBase
     /// </summary>
     /// <returns></returns>
     /// <response code="200"></response>
+    [Authorize]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetInfo()
     {
-        //Получить имя и почту
-        //Получить данные конфигурации если это создатель группы
-        //Получить данные группы(Имя учатников, и какой-то идентификатор(почта, id) если это создатель группы)
-        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(token);
-
-        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
-
-        var currentUser = new UserDto
-        {
-            Email = tokenUserEmail
-        };
-
-        var user = await _userRepository.GetUserAsync(currentUser);
+        var user = await GetUserAsync();
         var group = await _groupRepository.GetGroupAsync(user);
         var users = await _userRepository.GetUsersGroupAsync(group);
 
         var usersGroup = new List<UserViewModel>();
         foreach (var userDto in users)
         {
-            if (userDto.Email != currentUser.Email)
+            if (userDto.Email != user.Email)
             {
                 var userViewModel = new UserViewModel()
                 {
@@ -110,6 +99,82 @@ public class UserController : ControllerBase
             IsCreator = true
         };
         return Ok(response);
+    }
+
+    /// <summary>
+    /// Update email user.
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    /// <response code="200">If the data is valid.</response>
+    /// <response code="400">If the data is not valid.</response>
+    [Authorize]
+    [HttpPost("/api/users/update/email")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrorViewModel<UserViewModel>))]
+    public async Task<IActionResult> UpdateEmail(UserViewModel model)
+    {
+        var currentUser = await GetUserAsync();
+        var updateUser = new UserDto()
+        {
+            Id = currentUser.Id,
+            Name = currentUser.Name,
+            Email = currentUser.Email
+        };
+
+        if (model.Name != null)
+        {
+            updateUser.Name = model.Name;
+        }
+
+        if (model.Email != null)
+        {
+            var userEmail = new UserDto()
+            {
+                Email = model.Email
+            };
+            userEmail = await _userRepository.GetUserAsync(userEmail);
+
+            if (!IsValidEmail(model, userEmail, out var error))
+            {
+                return BadRequest(error);
+            }
+
+            updateUser.Email = model.Email;
+        }
+
+        await _userRepository.UpdateEmailNameAsync(updateUser);
+        var token = _jwtTokenHelper.GetToken(updateUser).AccessToken;
+        return Ok(token);
+    }
+
+    /// <summary>
+    /// Update password user.
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    /// <response code="200">If the data is valid.</response>
+    /// <response code="400">If the data is not valid.</response>
+    [Authorize]
+    [HttpPost("/api/users/update/password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrorViewModel<UserViewModel>))]
+    public async Task<IActionResult> UpdatePassword(UserViewModel model)
+    {
+        var currentUser = await GetUserAsync();
+        if (!IsValidPassword(model, currentUser, out var error))
+        {
+            BadRequest(error);
+        }
+
+        var user = new UserDto()
+        {
+            Email = model.Email,
+            Password = model.NewPassword
+        };
+
+        await _userRepository.UpdatePasswordAsync(user);
+        return Ok();
     }
 
     /// <summary>
@@ -166,5 +231,62 @@ public class UserController : ControllerBase
         }
 
         return Results.Json(response, statusCode: StatusCodes.Status200OK);
+    }
+
+    private bool IsValidEmail(UserViewModel model, UserDto user, out ErrorViewModel<UserViewModel>? error)
+    {
+        if (user != null)
+        {
+            error = new ErrorViewModel<UserViewModel>()
+            {
+                Detail = "User with this email already exists.",
+                ViewModel = model
+            };
+
+            return false;
+        }
+
+        error = null;
+        return true;
+    }
+
+    private bool IsValidPassword(UserViewModel model, UserDto currentUser, out ErrorViewModel<UserViewModel>? error)
+    {
+        if (model.CurrentPassword != null ||
+            model.NewPassword != null ||
+            model.ConfirmPassword != null)
+        {
+            error = new ErrorViewModel<UserViewModel>()
+            {
+                Detail = "One of the parameters does not matter.",
+                ViewModel = model
+            };
+            return false;
+        }
+
+        if (currentUser.Password != model.CurrentPassword)
+        {
+            error = new ErrorViewModel<UserViewModel>()
+            {
+                Detail = "Invalid user password.",
+                ViewModel = model
+            };
+
+            return false;
+        }
+
+        if (model.NewPassword != model.ConfirmPassword)
+        {
+            error = new ErrorViewModel<UserViewModel>()
+            {
+                Detail = "New password does not match.",
+                ViewModel = model
+            };
+
+            return false;
+        }
+
+        error = null;
+        return true;
     }
 }

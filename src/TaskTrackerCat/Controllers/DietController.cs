@@ -13,16 +13,14 @@ namespace TaskTrackerCat.Controllers;
 [Authorize]
 [ApiController]
 [Route("/api/diets")]
-public class DietController : ControllerBase
+public class DietController : ControllerBaseCastom
 {
-    private readonly IUserRepository _userRepository;
     private readonly IDietRepository _dietRepository;
 
     public DietController(IDietRepository dietRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository) : base(userRepository)
     {
         _dietRepository = dietRepository;
-        _userRepository = userRepository;
     }
 
     /// <summary>
@@ -34,17 +32,7 @@ public class DietController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<DietDto>))]
     public async Task<IResult> Get()
     {
-        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(token);
-
-        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
-
-        var user = new UserDto
-        {
-            Email = tokenUserEmail,
-        };
-        user = await _userRepository.GetUserAsync(user);
+        var user = await GetUserAsync();
 
         var result = await _dietRepository.GetDietsAsync(user.CurrentGroupId);
         return Results.Json(result, statusCode: StatusCodes.Status200OK);
@@ -63,17 +51,7 @@ public class DietController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrorViewModel<DietViewModel>))]
     public async Task<IActionResult> Update([FromBody] DietViewModel model)
     {
-        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(token);
-
-        var tokenUserEmail = jwtToken.Claims.First(c => c.Type == ClaimTypes.Email).Value;
-
-        var user = new UserDto
-        {
-            Email = tokenUserEmail,
-        };
-        user = await _userRepository.GetUserAsync(user);
+        var user = await GetUserAsync();
 
         var dietDto = new DietDto()
         {

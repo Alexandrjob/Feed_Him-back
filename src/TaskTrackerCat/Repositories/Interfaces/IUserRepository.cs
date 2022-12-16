@@ -7,6 +7,7 @@ public interface IUserRepository
     public Task<UserDto> AddUserAsync(UserDto user);
     public Task<UserDto> GetUserAsync(UserDto user);
     public Task<List<UserDto>> GetUsersGroupAsync(GroupDto group);
-    public Task UpdateUserAsync(UserDto user);
+    public Task UpdateEmailNameAsync(UserDto user);
+    public Task UpdatePasswordAsync(UserDto user);
     public Task DeleteUserAsync(UserDto user);
 }
