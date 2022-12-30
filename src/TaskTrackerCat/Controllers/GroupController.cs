@@ -9,7 +9,7 @@ using TaskTrackerCat.Repositories.Models;
 
 namespace TaskTrackerCat.Controllers;
 
-[AllowAnonymous]
+[Authorize]
 [ApiController]
 [Route("/api/groups")]
 public class GroupController : ControllerBaseCastom
