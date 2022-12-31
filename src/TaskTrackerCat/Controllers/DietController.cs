@@ -12,12 +12,15 @@ namespace TaskTrackerCat.Controllers;
 public class DietController : ControllerBase
 {
     private readonly IMemoryCache _cache;
+    private readonly ILogger<DietController> _logger;
     private readonly DietHub _dietHub;
     private readonly IDietRepository _dietRepository;
 
-    public DietController(IMemoryCache cache, DietHub dietHub, IDietRepository dietRepository)
+    public DietController(IMemoryCache cache, ILogger<DietController> logger, DietHub dietHub,
+        IDietRepository dietRepository)
     {
         _cache = cache;
+        _logger = logger;
         _dietHub = dietHub;
         _dietRepository = dietRepository;
     }
@@ -56,6 +59,10 @@ public class DietController : ControllerBase
             Status = model.Status
         };
         var diet = await _dietRepository.UpdateDietAsync(dietDto);
+        _logger.LogInformation("Пользователь {User} обновил прием пищи. Дата изменения: {Date}, статус: {Status}",
+            model.WaiterName,
+            model.Date,
+            model.Status);
 
         _cache.TryGetValue("key", out List<DietDto>? diets);
         if (diets != null)

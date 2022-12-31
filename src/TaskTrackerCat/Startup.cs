@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Serilog;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure;
 using TaskTrackerCat.Infrastructure.Factories;
@@ -34,8 +35,16 @@ public class Startup
         services.AddScoped<IRequestHandler<ConfigViewModel>, UpdateConfigHandler>();
     }
 
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
     {
+        var logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
+            .WriteTo.Seq("http://localhost:5341")
+            .CreateLogger();
+
+        loggerFactory.AddSerilog(logger);
+
         app.UseCors(builder =>
         {
             builder.WithOrigins("http://localhost:3000")

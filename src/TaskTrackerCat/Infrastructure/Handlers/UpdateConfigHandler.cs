@@ -12,6 +12,7 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
 {
     #region Fields
 
+    private readonly ILogger<UpdateConfigHandler> _logger;
     private readonly IDbConnectionFactory<SqlConnection> _dbConnectionFactory;
     private readonly IDietRepository _dietRepository;
     private readonly IConfigRepository _configRepository;
@@ -24,10 +25,12 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
 
     #endregion
 
-    public UpdateConfigHandler(IDbConnectionFactory<SqlConnection> dbConnectionFactory,
+    public UpdateConfigHandler(ILogger<UpdateConfigHandler> logger,
+        IDbConnectionFactory<SqlConnection> dbConnectionFactory,
         IDietRepository dietRepository,
         IConfigRepository configRepository)
     {
+        _logger = logger;
         _dbConnectionFactory = dbConnectionFactory;
         _dietRepository = dietRepository;
         _configRepository = configRepository;
@@ -68,10 +71,12 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
             }
 
             await UpdateDateFeeding(newConfig);
+
+            _logger.LogInformation("Пользователь изменил конфигурацию.");
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "Ошибка изменения конфигурации.");
             await _configRepository.UpdateConfigAsync(pastConfig);
             throw;
         }

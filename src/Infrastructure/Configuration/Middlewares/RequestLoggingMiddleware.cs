@@ -37,13 +37,20 @@ public class RequestLoggingMiddleware
             await context.Request.Body.ReadAsync(buffer, 0, buffer.Length);
             var bodyAsText = Encoding.UTF8.GetString(buffer);
 
-            _logger.LogInformation($"Http Request Information:{Environment.NewLine}" +
-                                   $"Schema:{context.Request.Scheme} " +
-                                   $"Host: {context.Request.Host} " +
-                                   $"Path: {context.Request.Path} " +
-                                   $"QueryString: {context.Request.QueryString}\r\n " +
-                                   $"Headers: {string.Join("\r\n    ", context.Request.Headers)}\r\n" +
-                                   $"Request Body: {bodyAsText}");
+            _logger.LogInformation("Http Request Information:" +
+                                   "Schema:{Scheme} " +
+                                   "Host: {Host} " +
+                                   "Path: {Path} " +
+                                   "QueryString: {QueryString}\r\n " +
+                                   "Headers: {Headers}" +
+                                   "Request Body: {BodyAsText}",
+                context.Request.Scheme,
+                context.Request.Host,
+                context.Request.Path,
+                context.Request.QueryString,
+                context.Request.Headers,
+                bodyAsText);
+
             context.Request.Body.Position = 0;
         }
         catch (Exception e)
