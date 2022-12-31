@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure;
 using TaskTrackerCat.Repositories.Interfaces;
@@ -10,11 +11,13 @@ namespace TaskTrackerCat.Controllers;
 [Route("/api/diets")]
 public class DietController : ControllerBase
 {
+    private readonly IMemoryCache _cache;
     private readonly DietHub _dietHub;
     private readonly IDietRepository _dietRepository;
 
-    public DietController(DietHub dietHub, IDietRepository dietRepository)
+    public DietController(IMemoryCache cache, DietHub dietHub, IDietRepository dietRepository)
     {
+        _cache = cache;
         _dietHub = dietHub;
         _dietRepository = dietRepository;
     }
@@ -26,7 +29,14 @@ public class DietController : ControllerBase
     [HttpGet]
     public async Task<IResult> Get()
     {
+        _cache.TryGetValue("key", out List<DietDto>? diets);
+        if (diets != null)
+        {
+            return Results.Json(diets);
+        }
+
         var result = await _dietRepository.GetDietsAsync();
+        _cache.Set("key", result, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(1)));
         return Results.Json(result);
     }
 
@@ -45,8 +55,15 @@ public class DietController : ControllerBase
             Date = model.Date,
             Status = model.Status
         };
-
         var diet = await _dietRepository.UpdateDietAsync(dietDto);
+
+        _cache.TryGetValue("key", out List<DietDto>? diets);
+        if (diets != null)
+        {
+            var index = diets.IndexOf(diet);
+            diets[index] = diet;
+        }
+
         var updateDiet = new DietHubViewModel()
         {
             Id = diet.Id,

@@ -31,4 +31,16 @@ public class DietDto
     /// Дата предпологаемого кормления.
     /// </summary>
     public DateTime EstimatedDateFeeding { get; set; }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj == null || !(obj is DietDto))
+        {
+            return false;
+        }
+
+        var other = (DietDto) obj;
+
+        return this.Id == other.Id;
+    }
 }

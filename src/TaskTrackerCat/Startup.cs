@@ -27,6 +27,7 @@ public class Startup
 
         #endregion
 
+        services.AddMemoryCache();
         services.AddSignalR();
 
         services.AddSingleton<DietHub, DietHub>();

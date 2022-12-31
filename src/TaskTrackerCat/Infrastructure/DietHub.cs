@@ -32,6 +32,11 @@ public class DietHub : Hub
     // Метод, который вызывается клиентом для отправки сообщения
     public async Task UpdateDietAsync(DietDto model)
     {
+        if (Clients == null)
+        {
+            return;
+        }
+
         // Отправляем сообщение всем клиентам
         await Clients.All.SendAsync("UpdateDiet", model);
     }
