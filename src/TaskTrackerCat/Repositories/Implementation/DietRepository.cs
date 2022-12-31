@@ -36,15 +36,17 @@ public class DietRepository : IDietRepository
         return result.ToList();
     }
 
-    public async Task UpdateDietAsync(DietDto diet)
+    public async Task<DietDto> UpdateDietAsync(DietDto diet)
     {
         var sql = "UPDATE diets " +
                   "SET waiter_name = @WaiterName, " +
                   "date = @Date, " +
                   "status = @Status " +
+                  "OUTPUT inserted.* " +
                   "WHERE Id = @Id";
 
         var connection = await _dbConnectionFactory.CreateConnection();
-        await connection.ExecuteAsync(sql, diet);
+        var result = await connection.QueryAsync<DietDto>(sql, diet);
+        return result.FirstOrDefault();
     }
 }

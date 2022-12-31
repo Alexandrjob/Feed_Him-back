@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TaskTrackerCat.HttpModels;
+using TaskTrackerCat.Infrastructure;
 using TaskTrackerCat.Repositories.Interfaces;
 using TaskTrackerCat.Repositories.Models;
 
@@ -9,10 +10,12 @@ namespace TaskTrackerCat.Controllers;
 [Route("/api/diets")]
 public class DietController : ControllerBase
 {
+    private readonly DietHub _dietHub;
     private readonly IDietRepository _dietRepository;
 
-    public DietController(IDietRepository dietRepository)
+    public DietController(DietHub dietHub, IDietRepository dietRepository)
     {
+        _dietHub = dietHub;
         _dietRepository = dietRepository;
     }
 
@@ -33,7 +36,7 @@ public class DietController : ControllerBase
     /// <param name="model">Class view model.</param>
     /// <returns></returns>
     [HttpPut]
-    public async Task<IActionResult> Update([FromBody]DietViewModel model)
+    public async Task<IActionResult> Update([FromBody] DietViewModel model)
     {
         var dietDto = new DietDto()
         {
@@ -42,8 +45,20 @@ public class DietController : ControllerBase
             Date = model.Date,
             Status = model.Status
         };
-        
-        await _dietRepository.UpdateDietAsync(dietDto);
+
+        var diet = await _dietRepository.UpdateDietAsync(dietDto);
+        var updateDiet = new DietHubViewModel()
+        {
+            Id = diet.Id,
+            WaiterName = diet.WaiterName,
+            Date = diet.Date,
+            Status = diet.Status,
+            ServingNumber = diet.ServingNumber,
+            EstimatedDateFeeding = diet.EstimatedDateFeeding,
+            RowArray = model.RowArray,
+            ColumnArray = model.ColumnArray
+        };
+        await _dietHub.UpdateDietAsync(updateDiet);
         return Ok();
     }
 }

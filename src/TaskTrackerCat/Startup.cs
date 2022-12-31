@@ -1,6 +1,4 @@
-﻿using System.Data;
-using Microsoft.Data.SqlClient;
-using Npgsql;
+﻿using Microsoft.Data.SqlClient;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure;
 using TaskTrackerCat.Infrastructure.Factories;
@@ -29,26 +27,27 @@ public class Startup
 
         #endregion
 
-        services.AddScoped<IRequestHandler<ConfigViewModel>, UpdateConfigHandler>();
+        services.AddSignalR();
 
-        services.AddCors(options =>
-        {
-            options.AddDefaultPolicy(builder =>
-            {
-                builder.WithOrigins("http://localhost:3000")
-                    .AllowAnyMethod()
-                    .AllowAnyOrigin();
-            });
-        });
+        services.AddSingleton<DietHub, DietHub>();
+        services.AddScoped<IRequestHandler<ConfigViewModel>, UpdateConfigHandler>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        app.UseCors(builder => builder.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader());
+        app.UseCors(builder =>
+        {
+            builder.WithOrigins("http://localhost:3000")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        });
 
         app.UseRouting();
-        app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapHub<DietHub>("/hub");
+            endpoints.MapDefaultControllerRoute();
+        });
     }
 }

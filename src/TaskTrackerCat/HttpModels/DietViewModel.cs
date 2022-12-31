@@ -6,7 +6,7 @@
 public class DietViewModel
 {
     public int Id { get; set; }
-    
+
     /// <summary>
     /// Имя кормящего.
     /// </summary>
@@ -21,4 +21,7 @@ public class DietViewModel
     /// Статус выполнения задачи, покормлен/не покормлен.
     /// </summary>
     public bool Status { get; set; }
+
+    public int RowArray { get; set; }
+    public int ColumnArray { get; set; }
 }
