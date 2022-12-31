@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Serilog;
+using Serilog.Formatting.Compact;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure;
 using TaskTrackerCat.Infrastructure.Factories;
@@ -37,21 +38,30 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
     {
-        var logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.Console()
-            .WriteTo.Seq("http://localhost:5341")
-            .CreateLogger();
-
-        loggerFactory.AddSerilog(logger);
-
-        app.UseCors(builder =>
+        if (env.IsDevelopment())
         {
-            builder.WithOrigins("http://localhost:3000")
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-        });
+            loggerFactory.AddSerilog(new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Console()
+                .WriteTo.Seq("http://localhost:5341")
+                .CreateLogger());
+
+            app.UseCors(builder =>
+            {
+                builder.WithOrigins("http://localhost:3000")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
+        }
+
+        if (env.IsProduction())
+        {
+            loggerFactory.AddSerilog(new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.File(new CompactJsonFormatter(), "Logs/logs.json")
+                .CreateLogger());
+        }
 
         app.UseRouting();
         app.UseEndpoints(endpoints =>
