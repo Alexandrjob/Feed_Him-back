@@ -1,7 +1,5 @@
-﻿using System.Data;
-using Dapper;
+﻿using Dapper;
 using Microsoft.Data.SqlClient;
-using Npgsql;
 using TaskTrackerCat.Infrastructure.Factories.Interfaces;
 using TaskTrackerCat.Repositories.Models;
 
@@ -10,7 +8,6 @@ namespace TaskTrackerCat.Infrastructure;
 public class InitService
 {
     private readonly IServiceProvider _serviceProvider;
-    //private IDbConnectionFactory<SqlConnection> _dbConnectionFactory;
 
     private SqlConnection _connection;
     private readonly List<DietDto> _diets;
@@ -54,7 +51,7 @@ public class InitService
         START_ESTIMATED_TIMESPAN_FEEDING = config.StartFeeding;
         END_ESTIMATED_TIMESPAN_FEEDING = config.EndFeeding;
         SetInterval();
-        
+
         //Проверка на существование данных в таблице.
         var sqlCheck = @"SELECT count(*) FROM config";
         var resultIsEmpty = await _connection.QueryAsync<bool>(sqlCheck);
@@ -63,7 +60,7 @@ public class InitService
         {
             return;
         }
-        
+
         var sqlInsert =
             "INSERT INTO config " +
             "(number_meals_per_day, start_feeding, end_feeding) " +
@@ -90,7 +87,7 @@ public class InitService
     private async Task InitMonth()
     {
         countServingNumber = 1;
-        
+
         //Проверка на существование данных в таблице.
         var sql = @"SELECT count(*) FROM diets";
         var resultIsEmpty = await _connection.QueryAsync<bool>(sql);
@@ -101,14 +98,14 @@ public class InitService
 
         //Дата приема еды начинается с текущего месяца.
         estimatedDateFeeding = new DateTime(
-            DateTime.Now.Year,
-            DateTime.Now.Month,
+            DateTime.UtcNow.Year,
+            DateTime.UtcNow.Month,
             1,
             START_ESTIMATED_TIMESPAN_FEEDING.Hours,
             START_ESTIMATED_TIMESPAN_FEEDING.Minutes,
             START_ESTIMATED_TIMESPAN_FEEDING.Milliseconds);
         //Количество дней в текущем месяце.
-        daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+        daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
 
         await AddDiets();
     }
@@ -116,13 +113,13 @@ public class InitService
     private async Task InitNextMonth()
     {
         countServingNumber = 1;
-        
+
         //Проверка на существование будущего месяца.
         var sql = @"SELECT MAX(estimated_date_feeding) FROM diets";
         var result = await _connection.QueryAsync<DateTime>(sql);
 
         var maxMonth = result.FirstOrDefault().Month;
-        var nextMonth = DateTime.Now.AddMonths(1).Month;
+        var nextMonth = DateTime.UtcNow.AddMonths(1).Month;
 
         //Если максимальныая дата масяца совпадает с будущим месяцем.
         if (maxMonth == nextMonth)
@@ -132,15 +129,15 @@ public class InitService
 
         //Дата приема еды начинается со следующего месяца.
         estimatedDateFeeding = new DateTime(
-            DateTime.Now.Year,
-            DateTime.Now.Month,
-            1,
-            START_ESTIMATED_TIMESPAN_FEEDING.Hours,
-            START_ESTIMATED_TIMESPAN_FEEDING.Minutes,
-            START_ESTIMATED_TIMESPAN_FEEDING.Milliseconds)
+                DateTime.UtcNow.Year,
+                DateTime.UtcNow.Month,
+                1,
+                START_ESTIMATED_TIMESPAN_FEEDING.Hours,
+                START_ESTIMATED_TIMESPAN_FEEDING.Minutes,
+                START_ESTIMATED_TIMESPAN_FEEDING.Milliseconds)
             .AddMonths(1);
         //Дней в следующем месяце.
-        daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.AddMonths(1).Month);
+        daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.AddMonths(1).Month);
 
         await AddDiets();
     }
@@ -152,10 +149,10 @@ public class InitService
             AddDiet();
         }
 
-        var sql =                                                         
-            "INSERT INTO diets " +                                        
-            "(serving_number, status, estimated_date_feeding) " +         
-            "VALUES(@ServingNumber, @Status, @EstimatedDateFeeding)";     
+        var sql =
+            "INSERT INTO diets " +
+            "(serving_number, status, estimated_date_feeding) " +
+            "VALUES(@ServingNumber, @Status, @EstimatedDateFeeding)";
         await _connection.ExecuteAsync(sql, _diets);
     }
 
@@ -167,24 +164,25 @@ public class InitService
             Status = false,
             EstimatedDateFeeding = estimatedDateFeeding
         };
-        
+
         if (countServingNumber == NUMBER_MEALS_PER_DAY)
         {
             SetEndTimeFeeding();
             diet.EstimatedDateFeeding = estimatedDateFeeding;
             _diets.Add(diet);
-            
+
             SetStartTimeFeeding();
             estimatedDateFeeding = estimatedDateFeeding.AddDays(1); //Кормить каждый день.
             countServingNumber = 1;
             return;
         }
+
         estimatedDateFeeding = estimatedDateFeeding.AddHours(INTERVAL.Hours).AddMinutes(INTERVAL.Minutes);
-        
+
         _diets.Add(diet);
         countServingNumber++;
     }
-    
+
     private void SetStartTimeFeeding()
     {
         //Устанавливаем значения часа и минут в начальные значения.

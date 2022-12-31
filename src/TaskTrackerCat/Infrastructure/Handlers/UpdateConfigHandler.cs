@@ -48,7 +48,7 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         };
 
         //Получение конфига перед обновлением.  
-        ConfigDto pastConfig = await _configRepository.GetConfigAsync(newConfig);
+        var pastConfig = await _configRepository.GetConfigAsync(newConfig);
 
         if (pastConfig.NumberMealsPerDay == newConfig.NumberMealsPerDay &&
             pastConfig.StartFeeding == newConfig.StartFeeding &&
@@ -93,12 +93,18 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
     /// </summary>
     private async Task DeleteDiets()
     {
+        var firstDayInCurrentMonth = new DateTime(
+            DateTime.UtcNow.Year,
+            DateTime.UtcNow.Month,
+            1);
+
         //Удаляем все приемы пищи с текущего месяца.
         var sqlDiets = @"DELETE diets " +
-                       "WHERE serving_number > @NUMBER_MEALS_PER_DAY";
+                       "WHERE serving_number > @NUMBER_MEALS_PER_DAY " +
+                       "AND estimated_date_feeding >= @firstDayInCurrentMonth";
 
         var connection = await _dbConnectionFactory.CreateConnection();
-        await connection.ExecuteAsync(sqlDiets, new {NUMBER_MEALS_PER_DAY});
+        await connection.ExecuteAsync(sqlDiets, new {NUMBER_MEALS_PER_DAY, firstDayInCurrentMonth});
     }
 
     /// <summary>
@@ -113,8 +119,8 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         //Устанавливаем максимальное значение, так как при изменении даты кормления идет сортировка по дате.
         //Если дату не устанавить в максимальное значение то добавленые примемы будут первыми.
         estimatedDateFeeding = new DateTime(
-            DateTime.Now.Year,
-            DateTime.Now.Month,
+            DateTime.UtcNow.Year,
+            DateTime.UtcNow.Month,
             1,
             config.EndFeeding.Hours,
             config.EndFeeding.Minutes,
@@ -145,8 +151,8 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
     /// <returns>Количесво приемов еды.</returns>
     private int GetTotalNumberDiets(int pastNumberMealsPerDay)
     {
-        var daysInCurrentMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-        var daysInNextMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.AddMonths(1).Month);
+        var daysInCurrentMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
+        var daysInNextMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.AddMonths(1).Month);
 
         return (daysInNextMonth + daysInCurrentMonth) * (NUMBER_MEALS_PER_DAY - pastNumberMealsPerDay);
     }
@@ -180,7 +186,7 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         SetIntervalFeeding(config);
 
         //Редактирование даты приема еды начинается с текущего месяца.
-        var dateFeeding = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var dateFeeding = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
 
         var sqlGet =
             @"SELECT id, serving_number FROM diets " +
@@ -202,8 +208,8 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
     private void AddDateFeeding(ConfigDto newConfig, IEnumerable<DietDto> diets)
     {
         estimatedDateFeeding = new DateTime(
-            DateTime.Now.Year,
-            DateTime.Now.Month,
+            DateTime.UtcNow.Year,
+            DateTime.UtcNow.Month,
             1,
             newConfig.StartFeeding.Hours,
             newConfig.StartFeeding.Minutes,
