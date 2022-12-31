@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskTrackerCat.HttpModels;
 using TaskTrackerCat.Infrastructure.Handlers.Interfaces;
@@ -122,12 +123,19 @@ public class UserController : ControllerBaseCastom
             Email = currentUser.Email
         };
 
-        if (model.Name != null)
+        if (currentUser.Name == model.Name &
+            currentUser.Email == model.Email)
+        {
+            return Accepted();
+        }
+
+        if (!string.IsNullOrWhiteSpace(model.Name))
         {
             updateUser.Name = model.Name;
         }
 
-        if (model.Email != null)
+        if (!string.IsNullOrWhiteSpace(model.Email) &
+            model.Email != currentUser.Email)
         {
             var userEmail = new UserDto()
             {
@@ -141,11 +149,14 @@ public class UserController : ControllerBaseCastom
             }
 
             updateUser.Email = model.Email;
+
+            await _userRepository.UpdateEmailNameAsync(updateUser);
+            var token = _jwtTokenHelper.GetToken(updateUser).AccessToken;
+            return Ok(token);
         }
 
         await _userRepository.UpdateEmailNameAsync(updateUser);
-        var token = _jwtTokenHelper.GetToken(updateUser).AccessToken;
-        return Ok(token);
+        return Ok();
     }
 
     /// <summary>
@@ -164,12 +175,12 @@ public class UserController : ControllerBaseCastom
         var currentUser = await GetUserAsync();
         if (!IsValidPassword(model, currentUser, out var error))
         {
-            BadRequest(error);
+            return BadRequest(error);
         }
 
         var user = new UserDto()
         {
-            Email = model.Email,
+            Email = currentUser.Email,
             Password = model.NewPassword
         };
 
@@ -246,15 +257,29 @@ public class UserController : ControllerBaseCastom
             return false;
         }
 
+        var pattern = "[.\\-_a-z0-9]+@([a-z0-9][\\-a-z0-9]+\\.)+[a-z]{2,6}";
+        var isMatch = Regex.Match(model.Email, pattern, RegexOptions.IgnoreCase);
+
+        if (!isMatch.Success)
+        {
+            error = new ErrorViewModel<UserViewModel>()
+            {
+                Detail = "Wrong email.",
+                ViewModel = model
+            };
+
+            return false;
+        }
+
         error = null;
         return true;
     }
 
     private bool IsValidPassword(UserViewModel model, UserDto currentUser, out ErrorViewModel<UserViewModel>? error)
     {
-        if (model.CurrentPassword != null ||
-            model.NewPassword != null ||
-            model.ConfirmPassword != null)
+        if (string.IsNullOrWhiteSpace(model.CurrentPassword) ||
+            string.IsNullOrWhiteSpace(model.NewPassword) ||
+            string.IsNullOrWhiteSpace(model.ConfirmPassword))
         {
             error = new ErrorViewModel<UserViewModel>()
             {
@@ -280,6 +305,20 @@ public class UserController : ControllerBaseCastom
             error = new ErrorViewModel<UserViewModel>()
             {
                 Detail = "New password does not match.",
+                ViewModel = model
+            };
+
+            return false;
+        }
+
+        var pattern = @"(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z !#$%&'()*+,-.\/:;<=>?@\[\\\]^_`{|}~]{8,255}";
+        var isMatch = Regex.Match(model.NewPassword, pattern, RegexOptions.None);
+
+        if (!isMatch.Success)
+        {
+            error = new ErrorViewModel<UserViewModel>()
+            {
+                Detail = "Password must have an uppercase letter, a number, and be longer than 7.",
                 ViewModel = model
             };
 
