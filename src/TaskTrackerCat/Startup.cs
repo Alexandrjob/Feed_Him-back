@@ -39,6 +39,7 @@ public class Startup
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
     {
         if (env.IsDevelopment())
+        {
             // loggerFactory.AddSerilog(new LoggerConfiguration()
             //     .MinimumLevel.Information()
             //     .WriteTo.Console()
@@ -52,6 +53,7 @@ public class Startup
                     .AllowAnyMethod()
                     .AllowCredentials();
             });
+        }
 
         loggerFactory.AddSerilog(new LoggerConfiguration()
             .MinimumLevel.Information()

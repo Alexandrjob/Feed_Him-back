@@ -7,6 +7,9 @@ namespace TaskTrackerCat.Infrastructure;
 
 public class InitService
 {
+    #region Fields
+
+    private readonly ILogger<InitService> _logger;
     private readonly IServiceProvider _serviceProvider;
 
     private SqlConnection _connection;
@@ -21,8 +24,11 @@ public class InitService
     private int daysInMonth;
     private TimeSpan INTERVAL;
 
-    public InitService(IConfiguration configuration, IServiceProvider serviceProvider)
+    #endregion
+    
+    public InitService(ILogger<InitService> logger, IConfiguration configuration, IServiceProvider serviceProvider)
     {
+        _logger = logger;
         _serviceProvider = serviceProvider;
         _diets = new List<DietDto>();
     }
@@ -56,13 +62,26 @@ public class InitService
         var sqlCheck = @"SELECT count(*) FROM config";
         var resultIsEmpty = await _connection.QueryAsync<bool>(sqlCheck);
 
-        if (resultIsEmpty.FirstOrDefault()) return;
+        if (resultIsEmpty.FirstOrDefault())
+        {
+            _logger.LogInformation("Конфигурация найдена в базе данных.");
+            return;
+        }
 
         var sqlInsert =
             "INSERT INTO config " +
             "(number_meals_per_day, start_feeding, end_feeding) " +
             "VALUES(@NumberMealsPerDay, @StartFeeding, @EndFeeding)";
-        await _connection.ExecuteAsync(sqlInsert, config);
+        try
+        {
+            await _connection.ExecuteAsync(sqlInsert, config);
+            _logger.LogInformation("Конфигурация записана в базу данных.");
+        }
+        catch (Exception e)
+        {
+            _logger.LogInformation(e, "Ошибка отправки данных(config) в базу данных.");
+            throw;
+        }
     }
 
     private void SetInterval()
@@ -88,7 +107,11 @@ public class InitService
         //Проверка на существование данных в таблице.
         var sql = @"SELECT count(*) FROM diets";
         var resultIsEmpty = await _connection.QueryAsync<bool>(sql);
-        if (resultIsEmpty.FirstOrDefault()) return;
+        if (resultIsEmpty.FirstOrDefault())
+        {
+            _logger.LogInformation("Приемы пищи текущего месяца найдены в базе данных.");
+            return;
+        }
 
         //Дата приема еды начинается с текущего месяца.
         estimatedDateFeeding = new DateTime(
@@ -102,6 +125,7 @@ public class InitService
         daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
 
         await AddDiets();
+        _logger.LogInformation("Приемы пищи текущего месяца({Date}) записаны в базу данных.", DateTime.UtcNow);
     }
 
     private async Task InitNextMonth()
@@ -116,7 +140,11 @@ public class InitService
         var nextMonth = DateTime.UtcNow.AddMonths(1).Month;
 
         //Если максимальныая дата масяца совпадает с будущим месяцем.
-        if (maxMonth == nextMonth) return;
+        if (maxMonth == nextMonth)
+        {
+            _logger.LogInformation("Приемы пищи следующего месяца найдены в базе данных.");
+            return;
+        }
 
         //Дата приема еды начинается со следующего месяца.
         estimatedDateFeeding = new DateTime(
@@ -131,6 +159,8 @@ public class InitService
         daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.AddMonths(1).Month);
 
         await AddDiets();
+        _logger.LogInformation("Приемы пищи следующего месяца({Date}) записаны в базу данных.",
+            DateTime.UtcNow.AddMonths(1));
     }
 
     private async Task AddDiets()
@@ -141,7 +171,15 @@ public class InitService
             "INSERT INTO diets " +
             "(serving_number, status, estimated_date_feeding) " +
             "VALUES(@ServingNumber, @Status, @EstimatedDateFeeding)";
-        await _connection.ExecuteAsync(sql, _diets);
+        try
+        {
+            await _connection.ExecuteAsync(sql, _diets);
+        }
+        catch (Exception e)
+        {
+            _logger.LogInformation(e, "Ошибка отправки данных(diets) в базу данных.");
+            throw;
+        }
     }
 
     private void AddDiet()
