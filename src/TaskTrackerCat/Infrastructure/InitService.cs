@@ -45,7 +45,7 @@ public class InitService
         {
             NumberMealsPerDay = 7,
             StartFeeding = new TimeSpan(7, 30, 0),
-            EndFeeding = new TimeSpan(23, 00, 0),
+            EndFeeding = new TimeSpan(23, 00, 0)
         };
         NUMBER_MEALS_PER_DAY = config.NumberMealsPerDay;
         START_ESTIMATED_TIMESPAN_FEEDING = config.StartFeeding;
@@ -56,10 +56,7 @@ public class InitService
         var sqlCheck = @"SELECT count(*) FROM config";
         var resultIsEmpty = await _connection.QueryAsync<bool>(sqlCheck);
 
-        if (resultIsEmpty.FirstOrDefault())
-        {
-            return;
-        }
+        if (resultIsEmpty.FirstOrDefault()) return;
 
         var sqlInsert =
             "INSERT INTO config " +
@@ -91,10 +88,7 @@ public class InitService
         //Проверка на существование данных в таблице.
         var sql = @"SELECT count(*) FROM diets";
         var resultIsEmpty = await _connection.QueryAsync<bool>(sql);
-        if (resultIsEmpty.FirstOrDefault())
-        {
-            return;
-        }
+        if (resultIsEmpty.FirstOrDefault()) return;
 
         //Дата приема еды начинается с текущего месяца.
         estimatedDateFeeding = new DateTime(
@@ -122,10 +116,7 @@ public class InitService
         var nextMonth = DateTime.UtcNow.AddMonths(1).Month;
 
         //Если максимальныая дата масяца совпадает с будущим месяцем.
-        if (maxMonth == nextMonth)
-        {
-            return;
-        }
+        if (maxMonth == nextMonth) return;
 
         //Дата приема еды начинается со следующего месяца.
         estimatedDateFeeding = new DateTime(
@@ -144,10 +135,7 @@ public class InitService
 
     private async Task AddDiets()
     {
-        for (var i = 0; i < daysInMonth * NUMBER_MEALS_PER_DAY; i++)
-        {
-            AddDiet();
-        }
+        for (var i = 0; i < daysInMonth * NUMBER_MEALS_PER_DAY; i++) AddDiet();
 
         var sql =
             "INSERT INTO diets " +

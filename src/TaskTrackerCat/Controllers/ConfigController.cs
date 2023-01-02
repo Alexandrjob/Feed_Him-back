@@ -6,15 +6,15 @@ namespace TaskTrackerCat.Controllers;
 
 [ApiController]
 [Route("/api/configs")]
-public class ConfigController: ControllerBase
+public class ConfigController : ControllerBase
 {
     private readonly IRequestHandler<ConfigViewModel> _updateConfigHandler;
-    
+
     public ConfigController(IRequestHandler<ConfigViewModel> updateConfigHandler)
     {
         _updateConfigHandler = updateConfigHandler;
     }
-    
+
     /// <summary>
     /// Update config number of meals per day.
     /// </summary>

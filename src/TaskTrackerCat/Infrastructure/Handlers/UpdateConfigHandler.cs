@@ -56,19 +56,14 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         if (pastConfig.NumberMealsPerDay == newConfig.NumberMealsPerDay &&
             pastConfig.StartFeeding == newConfig.StartFeeding &&
             pastConfig.EndFeeding == newConfig.EndFeeding)
-        {
             return;
-        }
 
         await _configRepository.UpdateConfigAsync(newConfig);
         NUMBER_MEALS_PER_DAY = newConfig.NumberMealsPerDay;
 
         try
         {
-            if (pastConfig.NumberMealsPerDay != newConfig.NumberMealsPerDay)
-            {
-                await UpdateDiets(newConfig, pastConfig);
-            }
+            if (pastConfig.NumberMealsPerDay != newConfig.NumberMealsPerDay) await UpdateDiets(newConfig, pastConfig);
 
             await UpdateDateFeeding(newConfig);
 
@@ -135,10 +130,7 @@ public class UpdateConfigHandler : IRequestHandler<ConfigViewModel>
         var numberDiets = GetTotalNumberDiets(pastNumberMealsPerDay);
 
         var diets = new List<DietDto>();
-        for (var i = 0; i < numberDiets; i++)
-        {
-            AddDiet(diets, pastNumberMealsPerDay);
-        }
+        for (var i = 0; i < numberDiets; i++) AddDiet(diets, pastNumberMealsPerDay);
 
         var sql =
             "INSERT INTO diets " +

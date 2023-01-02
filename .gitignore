@@ -1,6 +1,7 @@
 .git
 .idea
 TaskTrackerCat.sln.DotSettings.user
+logs.json
 
 src/Infrastructure/obj
 src/Infrastructure/bin

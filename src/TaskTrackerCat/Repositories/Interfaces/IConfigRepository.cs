@@ -4,7 +4,6 @@ namespace TaskTrackerCat.Repositories.Interfaces;
 
 public interface IConfigRepository
 {
-    
     /// <summary>
     /// Обновление количества приемов еды.
     /// </summary>

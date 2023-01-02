@@ -34,13 +34,10 @@ public class DietDto
 
     public override bool Equals(object? obj)
     {
-        if (obj == null || !(obj is DietDto))
-        {
-            return false;
-        }
+        if (obj == null || !(obj is DietDto)) return false;
 
         var other = (DietDto) obj;
 
-        return this.Id == other.Id;
+        return Id == other.Id;
     }
 }

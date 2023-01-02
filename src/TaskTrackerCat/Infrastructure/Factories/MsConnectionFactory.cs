@@ -16,17 +16,11 @@ public class MsConnectionFactory : IDbConnectionFactory<SqlConnection>
 
     public async Task<SqlConnection> CreateConnection()
     {
-        if (_connection != null)
-        {
-            return _connection;
-        }
+        if (_connection != null) return _connection;
 
         _connection = new SqlConnection(_connectionString);
         _connection.Open();
-        if (_connection.State == ConnectionState.Closed)
-        {
-            _connection = null;
-        }
+        if (_connection.State == ConnectionState.Closed) _connection = null;
 
         return _connection;
     }

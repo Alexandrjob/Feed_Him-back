@@ -33,10 +33,7 @@ public class DietController : ControllerBase
     public async Task<IResult> Get()
     {
         _cache.TryGetValue("key", out List<DietDto>? diets);
-        if (diets != null)
-        {
-            return Results.Json(diets);
-        }
+        if (diets != null) return Results.Json(diets);
 
         var result = await _dietRepository.GetDietsAsync();
         _cache.Set("key", result, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(1)));
