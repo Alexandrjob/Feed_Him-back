@@ -2,18 +2,19 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <LangVersion>11</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentMigrator" Version="3.3.2" />
-        <PackageReference Include="FluentMigrator.Runner" Version="3.3.2" />
+        <PackageReference Include="FluentMigrator" Version="3.3.2"/>
+        <PackageReference Include="FluentMigrator.Runner" Version="3.3.2"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\TaskTrackerCat\TaskTrackerCat.csproj" />
+        <ProjectReference Include="..\TaskTrackerCat.API\TaskTrackerCat.API.csproj"/>
     </ItemGroup>
 
 </Project>

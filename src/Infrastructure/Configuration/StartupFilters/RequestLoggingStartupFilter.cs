@@ -1,4 +1,4 @@
-﻿using Infrastructure.Configuration.Middlewares;
+using Infrastructure.Configuration.Middlewares;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -6,8 +6,8 @@ namespace Infrastructure.Configuration.Middlewares;
 
 public class RequestLoggingMiddleware
 {
-    private readonly RequestDelegate _next;
     private readonly ILogger<RequestLoggingMiddleware> _logger;
+    private readonly RequestDelegate _next;
 
     public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
     {
@@ -26,8 +26,11 @@ public class RequestLoggingMiddleware
         try
         {
             _logger.LogInformation($"Http request {context.Request.Path}");
-            if (context.Request.ContentLength is < 0 or null)
+            if (context.Request.ContentLength is < 0 or null) return;
+
+            if (context.Request.Headers["Content-Type"].Any(x => x.StartsWith("multipart/form-data")))
             {
+                LoggingFile(context);
                 return;
             }
 
@@ -37,25 +40,29 @@ public class RequestLoggingMiddleware
             await context.Request.Body.ReadAsync(buffer, 0, buffer.Length);
             var bodyAsText = Encoding.UTF8.GetString(buffer);
 
-            _logger.LogInformation("Http Request Information:" +
-                                   "Schema:{Scheme} " +
-                                   "Host: {Host} " +
-                                   "Path: {Path} " +
-                                   "QueryString: {QueryString}\r\n " +
-                                   "Headers: {Headers}" +
-                                   "Request Body: {BodyAsText}",
-                context.Request.Scheme,
-                context.Request.Host,
-                context.Request.Path,
-                context.Request.QueryString,
-                context.Request.Headers,
-                bodyAsText);
-
+            _logger.LogInformation($"Http Request Information:{Environment.NewLine}" +
+                                   $"Schema:{context.Request.Scheme} " +
+                                   $"Host: {context.Request.Host} " +
+                                   $"Path: {context.Request.Path} " +
+                                   $"QueryString: {context.Request.QueryString}\r\n " +
+                                   $"Headers: {string.Join("\r\n    ", context.Request.Headers)}\r\n" +
+                                   $"Request Body: {bodyAsText}");
             context.Request.Body.Position = 0;
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Could not request body");
         }
+    }
+
+    public void LoggingFile(HttpContext context)
+    {
+        _logger.LogInformation($"Http Request Information:{Environment.NewLine}" +
+                               $"Schema:{context.Request.Scheme} " +
+                               $"Host: {context.Request.Host} " +
+                               $"Path: {context.Request.Path} " +
+                               $"QueryString: {context.Request.QueryString}\r\n " +
+                               $"Headers: {string.Join("\r\n    ", context.Request.Headers)}\r\n" +
+                               "Request Body: body have file. Skip log request.");
     }
 }
