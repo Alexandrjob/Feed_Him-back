@@ -84,8 +84,8 @@ public class DietRepository : IDietRepository
     {
         //Удаляем все приемы пищи с текущего месяца.
         var sql = @"DELETE diets " +
-                       "WHERE serving_number > @numberMealsPerDay " +
-                       "AND estimated_date_feeding >= @firstDayInCurrentMonth";
+                  "WHERE serving_number > @numberMealsPerDay " +
+                  "AND estimated_date_feeding >= @firstDayInCurrentMonth";
 
         var connection = _dbConnectionFactory.CreateConnection();
         await connection.ExecuteAsync(sql, new {numberMealsPerDay, firstDayInCurrentMonth});

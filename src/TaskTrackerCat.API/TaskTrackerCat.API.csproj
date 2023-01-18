@@ -22,12 +22,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\TaskTrackerCat.BLL\TaskTrackerCat.BLL.csproj"/>
-        <ProjectReference Include="..\Infrastructure\Infrastructure.csproj"/>
+        <_ContentIncludedByDefault Remove="Logs\logs.json" />
     </ItemGroup>
 
     <ItemGroup>
-        <_ContentIncludedByDefault Remove="Logs\logs.json"/>
+      <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+      <ProjectReference Include="..\TaskTrackerCat.BLL\TaskTrackerCat.BLL.csproj" />
     </ItemGroup>
 
 </Project>
