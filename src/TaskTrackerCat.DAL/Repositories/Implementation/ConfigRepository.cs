@@ -29,9 +29,7 @@ public class ConfigRepository : IConfigRepository
 
     public async Task<ConfigDto> GetAsync(ConfigDto config)
     {
-        var sql =
-            @"SELECT * FROM config " +
-            "WHERE id = @Id";
+        var sql = @"SELECT * FROM config";
 
         var connection = _dbConnectionFactory.CreateConnection();
         var result = await connection.QueryAsync<ConfigDto>(sql, config);

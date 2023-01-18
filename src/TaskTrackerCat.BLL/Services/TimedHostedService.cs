@@ -5,14 +5,16 @@ namespace TaskTrackerCat.BLL.Services;
 
 public class TimedHostedService : IHostedService, IDisposable
 {
-    private readonly InitService _initService;
+    private readonly ILogger<InitService> _loggerInitService;
     private readonly ILogger<TimedHostedService> _logger;
     private Timer? _timer;
-
-    public TimedHostedService(ILogger<TimedHostedService> logger, InitService initService)
+    private readonly IServiceProvider _serviceProvider;
+    
+    public TimedHostedService(ILogger<InitService> loggerInitService, ILogger<TimedHostedService> logger, IServiceProvider serviceProvider)
     {
+        _loggerInitService = loggerInitService;
         _logger = logger;
-        _initService = initService;
+        _serviceProvider = serviceProvider;
     }
 
     public void Dispose()
@@ -38,6 +40,7 @@ public class TimedHostedService : IHostedService, IDisposable
         var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
         var nextDaysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.AddMonths(1).Month);
         _timer.Change(TimeSpan.FromDays(daysInMonth - 2), TimeSpan.FromDays(nextDaysInMonth - 2));
+        
         _logger.LogInformation("Изменение следующего запуска таймера.Следующий запуск:{NextStart}",
             TimeSpan.FromDays(daysInMonth - 2));
         _logger.LogInformation("Изменение интервала запуска таймера.Новый интервал:{Period}",
@@ -46,7 +49,10 @@ public class TimedHostedService : IHostedService, IDisposable
         try
         {
             _logger.LogInformation("Запуск генерации приемов пищи.");
-            await _initService.Init();
+            using (var service = new InitService(_loggerInitService, _serviceProvider))
+            {
+                await service.Init();
+            }
         }
         catch (Exception e)
         {

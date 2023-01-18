@@ -28,7 +28,6 @@ public class UpdateConfigHandler : IRequestHandler<RequestUpdateConfigCommand, R
     {
         var newConfig = new ConfigDto
         {
-            Id = request.Id,
             NumberMealsPerDay = request.NumberMealsPerDay,
             StartFeeding = new TimeSpan(request.StartFeeding.Hour, request.StartFeeding.Minute,
                 request.StartFeeding.Second),
@@ -42,9 +41,10 @@ public class UpdateConfigHandler : IRequestHandler<RequestUpdateConfigCommand, R
             pastConfig.StartFeeding == newConfig.StartFeeding &&
             pastConfig.EndFeeding == newConfig.EndFeeding)
             return new ResponseUpdateConfigCommand();
-
-        await _configRepository.UpdateAsync(newConfig);
         
+        newConfig.Id = pastConfig.Id;
+        await _configRepository.UpdateAsync(newConfig);
+
         _updateConfigService.UpdateConfig(newConfig, pastConfig);
         return new ResponseUpdateConfigCommand();
     }

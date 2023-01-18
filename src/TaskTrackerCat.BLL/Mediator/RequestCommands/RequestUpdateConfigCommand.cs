@@ -5,8 +5,6 @@ namespace TaskTrackerCat.BLL.Mediator.RequestCommands;
 
 public class RequestUpdateConfigCommand : IRequest<ResponseUpdateConfigCommand>
 {
-    public int Id { get; set; }
-
     /// <summary>
     ///     Количество приемов еды.
     /// </summary>

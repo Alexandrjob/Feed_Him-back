@@ -76,16 +76,8 @@ public class DietRepository : IDietRepository
             "(serving_number, status, estimated_date_feeding) " +
             "VALUES (@ServingNumber, @Status, @EstimatedDateFeeding)";
 
-        var dp = new DynamicParameters();
-        foreach (var diet in diets)
-        {
-            dp.Add("@ServingNumber", diet.ServingNumber);
-            dp.Add("@Status", diet.Status);
-            dp.Add("@EstimatedDateFeeding", diet.EstimatedDateFeeding);
-        }
-        
         var connection = _dbConnectionFactory.CreateConnection();
-        await connection.ExecuteAsync(sql, dp);
+        await connection.ExecuteAsync(sql, diets);
     }
 
     public async Task DeleteDietsAsync(int numberMealsPerDay, DateTime firstDayInCurrentMonth)

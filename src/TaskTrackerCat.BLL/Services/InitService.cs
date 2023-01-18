@@ -9,7 +9,7 @@ using TaskTrackerCat.DAL.Repositories.Interfaces;
 
 namespace TaskTrackerCat.BLL.Services;
 
-public class InitService
+public class InitService:IDisposable
 {
     #region Fields
 
@@ -21,7 +21,7 @@ public class InitService
     private IConfigRepository _configRepository;
     private IDietRepository _dietRepository;
 
-    private SqlConnection _connection;
+    private IDbConnectionFactory<SqlConnection> _dbConnectionFactory;
     private readonly List<DietDto> _diets;
 
     public ConfigDto Config { get; set; }
@@ -45,8 +45,7 @@ public class InitService
     public async Task Init()
     {
         using var scope = _serviceProvider.CreateScope();
-        var dbConnectionFactory = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory<SqlConnection>>();
-        _connection = dbConnectionFactory.CreateConnection();
+        _dbConnectionFactory = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory<SqlConnection>>();
         
         _configHelper = scope.ServiceProvider.GetRequiredService<ConfigHelper>();
         _configRepository = scope.ServiceProvider.GetRequiredService<IConfigRepository>();
@@ -71,7 +70,8 @@ public class InitService
 
         //Проверка на существование данных в таблице.
         var sql = @"SELECT * FROM config";
-        var result = await _connection.QueryAsync<ConfigDto>(sql);
+        var connection = _dbConnectionFactory.CreateConnection();
+        var result = await connection.QueryAsync<ConfigDto>(sql);
         var config = result.FirstOrDefault();
         if (config != null)
         {
@@ -99,7 +99,8 @@ public class InitService
 
         //Проверка на существование данных в таблице.
         var sql = @"SELECT count(*) FROM diets";
-        var resultIsEmpty = await _connection.QueryAsync<bool>(sql);
+        var connection = _dbConnectionFactory.CreateConnection();
+        var resultIsEmpty = await connection.QueryAsync<bool>(sql);
         if (resultIsEmpty.FirstOrDefault())
         {
             _logger.LogInformation("Приемы пищи текущего месяца найдены в базе данных.");
@@ -127,7 +128,8 @@ public class InitService
 
         //Проверка на существование будущего месяца.
         var sql = @"SELECT MAX(estimated_date_feeding) FROM diets";
-        var result = await _connection.QueryAsync<DateTime>(sql);
+        var connection = _dbConnectionFactory.CreateConnection();
+        var result = await connection.QueryAsync<DateTime>(sql);
 
         var maxMonth = result.FirstOrDefault().Month;
         var nextMonth = DateTime.UtcNow.AddMonths(1).Month;
@@ -196,5 +198,13 @@ public class InitService
 
         _diets.Add(diet);
         countServingNumber++;
+    }
+
+    public void Dispose()
+    {
+        _dbConnectionFactory.Dispose();
+        _configHelper = null;
+        _configRepository = null;
+        _dietRepository = null;
     }
 }
