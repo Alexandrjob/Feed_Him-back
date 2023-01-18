@@ -62,7 +62,7 @@ public class InitService
     {
         Config = new ConfigDto
         {
-            NumberMealsPerDay = 7,
+            NumberMealsPerDay = 2,
             StartFeeding = new TimeSpan(7, 30, 0),
             EndFeeding = new TimeSpan(23, 00, 0)
         };

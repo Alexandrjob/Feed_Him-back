@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.Data.SqlClient;
+using TaskTrackerCat.API.Filters;
 using TaskTrackerCat.BLL.Mapping;
 using TaskTrackerCat.BLL.Services;
 using TaskTrackerCat.BLL.Services.Helpers;
@@ -18,13 +19,14 @@ public class Startup
         #region DataBase
 
         services.AddScoped<IDbConnectionFactory<SqlConnection>, MsConnectionFactory>();
+        services.AddScoped<SqlConnectionFilter>();
 
         services.AddScoped<IDietRepository, DietRepository>();
         services.AddScoped<IConfigRepository, ConfigRepository>();
 
         services.AddTransient<ConfigHelper, ConfigHelper>();
         services.AddScoped<UpdateConfigService, UpdateConfigService>();
-        
+
         services.AddTransient<InitService>();
         services.AddHostedService<TimedHostedService>();
 

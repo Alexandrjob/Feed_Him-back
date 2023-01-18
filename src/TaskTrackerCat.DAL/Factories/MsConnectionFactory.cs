@@ -1,5 +1,4 @@
-﻿using System.Data;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using TaskTrackerCat.DAL.Factories.Interfaces;
 
@@ -9,7 +8,8 @@ public class MsConnectionFactory : IDbConnectionFactory<SqlConnection>
 {
     private readonly string _connectionString;
     private SqlConnection _connection;
-
+    private readonly object _lock = new object();
+    
     public MsConnectionFactory(IConfiguration configuration)
     {
         _connectionString = configuration.GetSection("ConnectionStringMSSQL").Value;
@@ -17,18 +17,25 @@ public class MsConnectionFactory : IDbConnectionFactory<SqlConnection>
 
     public SqlConnection CreateConnection()
     {
-        if (_connection != null) return _connection;
+        lock (_lock)
+        {
+            if (_connection != null) return _connection;
 
-        _connection = new SqlConnection(_connectionString);
-        _connection.Open();
-        if (_connection.State == ConnectionState.Closed) _connection = null;
-
-        return _connection;
+            _connection = new SqlConnection(_connectionString);
+            _connection.Open();
+            return _connection;
+        }
     }
 
     public void Dispose()
     {
-        _connection?.Dispose();
-        _connection = null;
+        lock (_lock)
+        {
+            if (_connection != null)
+            {
+                _connection.Dispose();
+                _connection = null;
+            }
+        }
     }
 }
