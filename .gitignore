@@ -6,9 +6,14 @@ logs.json
 src/Infrastructure/obj
 src/Infrastructure/bin
 
+src/TaskTrackerCat.API/bin
+src/TaskTrackerCat.API/obj
 
-src/TaskTrackerCat/bin
-src/TaskTrackerCat/obj
+src/TaskTrackerCat.BLL/bin
+src/TaskTrackerCat.BLL/obj
+
+src/TaskTrackerCat.DAL/bin
+src/TaskTrackerCat.DAL/obj
 
 src/TaskTrackerCat.Migrator/obj
 src/TaskTrackerCat.Migrator/bin

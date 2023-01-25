@@ -5,7 +5,7 @@ namespace Infrastructure.Configuration.Extensions;
 
 public static class SwaggerGenExtension
 {
-    public static IServiceCollection AddSwaggerGenExample(this IServiceCollection services)
+    public static IServiceCollection AddSwaggerGen(this IServiceCollection services)
     {
         services.AddSwaggerGen(options =>
         {

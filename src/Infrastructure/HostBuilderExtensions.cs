@@ -24,7 +24,7 @@ public static class HostBuilderExtensions
 
             services.AddSingleton<IStartupFilter, RequestLoggingStartupFilter>();
             services.AddSingleton<IStartupFilter, SwaggerStartupFilter>();
-            services.AddSwaggerGenExample();
+            services.AddSwaggerGen();
         });
 
         return builder;

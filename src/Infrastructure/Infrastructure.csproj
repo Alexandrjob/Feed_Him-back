@@ -5,6 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>11</LangVersion>
+        <Title>Project expansion pack</Title>
+        <Authors>Alexandr</Authors>
     </PropertyGroup>
 
     <ItemGroup>
